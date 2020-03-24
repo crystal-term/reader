@@ -1,0 +1,24 @@
+name: reader
+version: 0.1.0
+
+authors:
+  - Chris Watson <cawatson1993@gmail.com>
+
+dependencies:
+  cursor:
+    github: crystal-term/cursor
+    branch: master
+  screen:
+    github: crystal-term/screen
+    branch: master
+  cute:
+    github: watzon/cute
+    branch: master
+
+development_dependencies:
+  spectator:
+    gitlab: arctic-fox/spectator
+
+crystal: 0.33.0
+
+license: MIT
