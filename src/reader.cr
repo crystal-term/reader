@@ -38,12 +38,12 @@ module Term
     def initialize(@input : IO::FileDescriptor = STDIN,
                   @output : IO::FileDescriptor = STDOUT,
                   @env : Hash(String, String) = ENV.to_h,
+                  @interrupt : Symbol = :error,
                   @track_history : Bool = true,
                   @history_cycle : Bool = false,
                   @history_exclude : String -> Bool = ->(s : String) { s.strip.empty? },
                   @history_duplicates : Bool = false)
       @console = Console.new(@input)
-      @interrupt = :error
 
       @history = History.new do |h|
         h.cycle = @history_cycle

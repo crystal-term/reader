@@ -29,7 +29,7 @@
 - No global state
 - Cross platform*
 
-_\* Windows support is not yet implemented since Crystal itself doesn't support Windows natively.__
+_\* Windows support is not yet implemented since Crystal itself doesn't support Windows natively._
 
 ## Installation
 
