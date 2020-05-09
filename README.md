@@ -47,6 +47,10 @@ _\* Windows support is not yet implemented since Crystal itself doesn't support 
 
 In just a few lines you can create a simple REPL.
 
+```crystal
+require "term-reader"
+```
+
 Initialize the reader:
 
 ```crystal
