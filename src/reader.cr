@@ -55,8 +55,8 @@ module Term
       @cursor = Term::Cursor
     end
 
-    # Listen for a specific key
-    def on_key(*keys : String | Symbol, &block : String, KeyEvent ->)
+    # Listen for specific keys (or all keys if `keys` is empty)
+    def on_key(keys = [] of String | Symbol, &block : String, KeyEvent ->)
       if keys.empty?
         keypress.on do |event|
           block.call(event.key.name, event)
