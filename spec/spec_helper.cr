@@ -1,2 +1,2 @@
-require "../src/reader"
+require "../src/term-reader"
 require "spectator"

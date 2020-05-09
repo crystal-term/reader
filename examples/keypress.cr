@@ -1,4 +1,4 @@
-require "../src/reader"
+require "../src/term-reader"
 
 def run
   puts "Press a key (or Ctrl-X to exit)"

@@ -1,4 +1,4 @@
-require "../src/reader"
+require "../src/term-reader"
 
 puts "*** Term::Reader Shell ***"
 puts "Press Ctrl-X to exit"

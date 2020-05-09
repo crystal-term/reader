@@ -1,4 +1,4 @@
-require "../src/reader"
+require "../src/term-reader"
 
 reader = Term::Reader.new
 

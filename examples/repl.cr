@@ -1,4 +1,4 @@
-require "../src/reader"
+require "../src/term-reader"
 
 def run_repl
   reader = Term::Reader.new
