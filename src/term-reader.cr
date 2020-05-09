@@ -1,5 +1,5 @@
-require "cursor"
-require "screen"
+require "term-cursor"
+require "term-screen"
 require "cute"
 
 require "./reader/history"

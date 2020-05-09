@@ -5,10 +5,10 @@ authors:
   - Chris Watson <cawatson1993@gmail.com>
 
 dependencies:
-  cursor:
+  term-cursor:
     github: crystal-term/cursor
     branch: master
-  screen:
+  term-screen:
     github: crystal-term/screen
     branch: master
   cute:
