@@ -85,11 +85,12 @@ module Term
 
     # Reads a keypress, including ivisible multibyte codes
     # and return a character as a String.
+    #
     # Nothing is echoed to the console. This call will block for
     # a single keypress, but will not wait for Enter to be pressed.
     def read_keypress(echo = false, raw = true, nonblock = false)
       codes = unbuffered { get_codes(echo: echo, raw: raw, nonblock: nonblock) }
-      char = codes ? String.new(codes.to_unsafe) : nil
+      char = codes ? codes.map(&.chr).join : nil
 
       trigger_key_event(char) if char
       char
@@ -103,18 +104,18 @@ module Term
       return if char.nil?
       codes << char.ord
 
-      condition = ->(escape : Array(UInt8)) {
+      condition = ->(escape : Array(UInt8)) do
         (codes - escape).empty? ||
         (escape - codes).empty? &&
-        !(64..126).includes?(codes.last)
-      }
+        !(64..126).covers?(codes.last)
+      end
 
       while console.escape_codes.any?(condition)
         char_codes = get_codes(codes: codes, echo: echo, raw: raw, nonblock: true)
         break if char_codes.nil?
       end
 
-      codes.map(&.chr.bytes).flatten
+      codes.map(&.to_u8)
     end
 
     # Get a signal line from STDIN. Each key pressed is echoed
