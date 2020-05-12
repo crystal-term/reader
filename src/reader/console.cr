@@ -17,7 +17,7 @@ module Term
 
       def initialize(@input : IO::FileDescriptor)
         @mode = Mode.new(@input)
-        @keys = Keys::CTRL_KEYS.merge(Keys::KEYS)
+        @keys = CTRL_KEYS.merge(KEYS)
         @escape_codes = {[ESC.ord.to_u8], CSI.bytes}
       end
 

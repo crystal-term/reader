@@ -27,7 +27,7 @@ module Term
         when /^\d+$/
           name = "num"
         else
-          if !!Keys::CTRL_KEYS[char]?
+          if !!Reader::CTRL_KEYS[char]?
             ctrl = true
           end
         end

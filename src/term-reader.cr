@@ -32,8 +32,13 @@ module Term
 
     getter interrupt : Symbol
 
-    Cute.signal key_event(key : String, event : KeyEvent)
-    Cute.signal keypress(event : KeyEvent)
+    @event_handlers : Hash(String, Array(Proc(String, KeyEvent, Nil)))
+
+    # :nodoc:
+    class_property global_handlers : Hash(String, Array(Proc(String, KeyEvent, Nil))) =
+      Hash(String, Array(Proc(String, KeyEvent, Nil))).new { |h, k|
+        h[k] = [] of Proc(String, KeyEvent, Nil)
+      }
 
     def initialize(@input : IO::FileDescriptor = STDIN,
                   @output : IO::FileDescriptor = STDOUT,
@@ -44,6 +49,9 @@ module Term
                   @history_exclude : String -> Bool = ->(s : String) { s.strip.empty? },
                   @history_duplicates : Bool = false)
       @console = Console.new(@input)
+      @event_handlers = Hash(String, Array(Proc(String, KeyEvent, Nil))).new do |h, k|
+        h[k] = [] of Proc(String, KeyEvent, Nil)
+      end
 
       @history = History.new do |h|
         h.cycle = @history_cycle
@@ -58,19 +66,13 @@ module Term
     # Listen for specific keys (or all keys if `keys` is empty)
     def on_key(keys = [] of String | Symbol, &block : String, KeyEvent ->)
       if keys.empty?
-        keypress.on do |event|
-          block.call(event.key.name, event)
-        end
+        @event_handlers[""] << block
       else
         keys.each do |key|
-          key_event.on do |ek, event|
-            if ek.lstrip("key") == key.to_s
-              block.call(key.to_s, event)
-            end
-          end
+          @event_handlers[key.to_s] << block
         end
       end
-      self
+      block
     end
 
     # Get input in unbuffered mode.
@@ -308,8 +310,14 @@ module Term
     # Publish event
     private def trigger_key_event(char : String, line : String = "")
       event = KeyEvent.from(console.keys, char, line)
-      key_event.emit("key#{event.key.name}", event) if event.trigger?
-      key_event.emit("keypress", event)
+      key = event.key.name
+
+      (@event_handlers[key] +
+       @event_handlers[""] +
+       self.class.global_handlers[key] +
+       self.class.global_handlers[""]).each do |proc|
+        proc.call(event.key.name, event)
+      end
     end
 
     # Handle input interrupt based on provided value
@@ -327,6 +335,24 @@ module Term
         # Ctrl-C
         raise InputInterrupt.new("Ctrl-c was pressed")
       end
+    end
+
+    macro subscribe(cls, keys = nil)
+      {% begin %}
+        {% cls = cls.resolve %}
+        {% if cls.has_method?(:keypress) %}
+          %kp = Proc(String, Term::Reader::KeyEvent, Nil).new { |k, e| self.keypress(k, e); nil }
+          Term::Reader.global_handlers[""] << %kp
+        {% end %}
+
+        {% keys = (Term::Reader::CTRL_KEYS.values + Term::Reader::KEYS.values).uniq %}
+        {% for key in keys %}
+          {% if cls.has_method?("key" + key) %}
+            %kp{key} = Proc(String, Term::Reader::KeyEvent, Nil).new { |k, e| self.key{{ key.id }}; nil }
+            Term::Reader.global_handlers[{{ key }}] << %kp{key}
+          {% end %}
+        {% end %}
+      {% end %}
     end
   end
 end
