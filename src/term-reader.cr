@@ -337,20 +337,15 @@ module Term
       end
     end
 
-    macro subscribe(cls, keys = nil)
-      {% begin %}
-        {% cls = cls.resolve %}
-        {% if cls.has_method?(:keypress) %}
+    macro subscribe(*keys)
+      {% valid_keys = (Term::Reader::CTRL_KEYS.values + Term::Reader::KEYS.values).uniq %}
+      {% for key in keys %}
+        {% if key.id.symbolize == :keypress %}
           %kp = Proc(String, Term::Reader::KeyEvent, Nil).new { |k, e| self.keypress(k, e); nil }
           Term::Reader.global_handlers[""] << %kp
-        {% end %}
-
-        {% keys = (Term::Reader::CTRL_KEYS.values + Term::Reader::KEYS.values).uniq %}
-        {% for key in keys %}
-          {% if cls.has_method?("key" + key) %}
-            %kp{key} = Proc(String, Term::Reader::KeyEvent, Nil).new { |k, e| self.key{{ key.id }}; nil }
-            Term::Reader.global_handlers[{{ key }}] << %kp{key}
-          {% end %}
+        {% elsif keys.includes?(key.id.stringify) || keys.includes?(key.id.symbolize) %}
+          %kp{key.id} = Proc(String, Term::Reader::KeyEvent, Nil).new { |k, e| self.key{{ key.id }}; nil }
+          Term::Reader.global_handlers[{{ key.id.stringify }}] << %kp{key.id}
         {% end %}
       {% end %}
     end
