@@ -1,6 +1,5 @@
 require "term-cursor"
 require "term-screen"
-require "cute"
 
 require "./reader/history"
 require "./reader/line"

@@ -11,9 +11,6 @@ dependencies:
   term-screen:
     github: crystal-term/screen
     branch: master
-  cute:
-    github: watzon/cute
-    branch: master
 
 development_dependencies:
   spectator:
