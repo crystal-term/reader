@@ -100,7 +100,7 @@ module Term
     # Get input code points
     # FIXME: Fails to handle escape '\e' all by itself
     def get_codes(codes = [] of Int32, echo = true, raw = false, nonblock = false)
-      char = console.get_char(echo: true, raw: false)
+      char = console.get_char(echo: true, raw: false, nonblock: nonblock)
       handle_interrupt if console.keys[char.to_s]? == "ctrl_c"
       return if char.nil?
       codes << char.ord

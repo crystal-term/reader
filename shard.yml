@@ -6,11 +6,13 @@ authors:
 
 dependencies:
   term-cursor:
-    github: crystal-term/cursor
-    branch: master
+    path: ../cursor
+    # github: crystal-term/cursor
+    # branch: master
   term-screen:
-    github: crystal-term/screen
-    branch: master
+    path: ../screen
+    # github: crystal-term/screen
+    # branch: master
 
 development_dependencies:
   spectator:
