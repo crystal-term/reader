@@ -1,7 +1,7 @@
 require "../spec_helper"
 
 Spectator.describe Term::Reader::KeyEvent do
-  let(:keys) { Term::Reader::Keys::KEYS }
+  let(:keys) { Term::Reader::KEYS }
 
   it "parses backspace" do
     event = described_class.from(keys, "\x7f")
@@ -29,7 +29,7 @@ it "parses lowercase char" do
 
   it "parses ctrl-a to ctrl-z inputs" do
     (1..26).zip('a'..'z').each do |code, char|
-      event = described_class.from(Term::Reader::Keys::CTRL_KEYS, code.chr)
+      event = described_class.from(Term::Reader::CTRL_KEYS, code.chr)
       expect(event.key.name).to eq("ctrl_#{char}")
       expect(event.value).to eq(code.chr.to_s)
     end
