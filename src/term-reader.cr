@@ -60,6 +60,8 @@ module Term
 
       @stop = false
       @cursor = Term::Cursor
+
+      Term::Reader.subscribe(:ctrl_d, :ctrl_z)
     end
 
     # Listen for specific keys (or all keys if `keys` is empty)
@@ -135,7 +137,7 @@ module Term
         code = codes[0]
         char = String.new(Slice.new(codes.to_unsafe, codes.size))
 
-        if ["ctrl_z", "ctrl_d"].includes?(console.keys[char]?.to_s)
+        if ["ctrl_z", "ctrl_d"].includes?(console.keys[char]?)
           trigger_key_event(char, line: line.to_s)
           break
         end
@@ -237,36 +239,29 @@ module Term
     # The input gathering is terminated by Ctrl+d or
     # Ctrl+z.
     def read_multiline(prompt = "")
-      @stop = false
-      lines = [] of String
-      loop do
-        line = read_line(prompt)
-        break if !line || line.strip.empty?
-        next if line !~ /\S/ && !@stop
-        lines << line
-        break if @stop
-      end
-      lines
+      read_multiline(prompt) { }
     end
 
     # ditto
     def read_multiline(prompt = "", &block : String ->)
-      # TODO: See if we can reduce code duplication here
       @stop = false
       lines = [] of String
-      loop do
+      until @stop
         line = read_line(prompt)
         break if !line || line.strip.empty?
         next if line !~ /\S/ && !@stop
+        lines << line
         yield line
-        break if @stop
       end
       lines
     end
 
-    # Capture Ctrl+d and Ctrl+z events
-    def ctrl_d
+    def keyctrl_d
       @stop = true
+    end
+
+    def keyctrl_z
+      keyctrl_d
     end
 
     def add_to_history(line)
