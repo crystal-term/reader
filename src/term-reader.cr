@@ -118,7 +118,7 @@ module Term
         break if char_codes.nil?
       end
 
-      codes.map(&.to_u8)
+      codes
     end
 
     # Get a signal line from STDIN. Each key pressed is echoed
@@ -135,7 +135,7 @@ module Term
         break unless codes && !codes.empty?
 
         code = codes[0]
-        char = String.new(Slice.new(codes.to_unsafe, codes.size))
+        char = codes.map(&.chr).join
 
         if ["ctrl_z", "ctrl_d"].includes?(console.keys[char]?)
           trigger_key_event(char, line: line.to_s)
@@ -318,7 +318,7 @@ module Term
     private def handle_interrupt
       case @interrupt
       when :signal
-        Process.kill(:int, Process.pid)
+        Process.signal(:int, Process.pid)
       when :exit
         exit(130)
       # when Proc
