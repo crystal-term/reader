@@ -37,7 +37,7 @@ _\* Windows support is not yet implemented since Crystal itself doesn't support 
 
    ```yaml
    dependencies:
-     reader:
+     term-reader:
        github: crystal-term/reader
    ```
 
