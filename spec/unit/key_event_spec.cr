@@ -1,5 +1,34 @@
 require "../spec_helper"
 
+F_KEYS = {
+  f1:  ["\eOP", "\e[[A", "\e[11~"],
+  f2:  ["\eOQ", "\e[[B", "\e[12~"],
+  f3:  ["\eOR", "\e[[C", "\e[13~"],
+  f4:  ["\eOS", "\e[[D", "\e[14~"],
+  f5:  ["\e[[E", "\e[15~"],
+  f6:  ["\e[17~"],
+  f7:  ["\e[18~"],
+  f8:  ["\e[19~"],
+  f9:  ["\e[20~"],
+  f10: ["\e[21~"],
+  f11: ["\e[23~"],
+  f12: ["\e[24~"],
+}
+
+OTHER_KEYS = {
+  up:        ["\e[A"],
+  down:      ["\e[B"],
+  right:     ["\e[C"],
+  left:      ["\e[D"],
+  clear:     ["\e[E"],
+  home:      ["\e[1~", "\e[7~", "\e[H"],
+  end:       ["\e[4~", "\eOF", "\e[F"],
+  insert:    ["\e[2~"],
+  delete:    ["\e[3~"],
+  page_up:   ["\e[5~"],
+  page_down: ["\e[6~"],
+}
+
 Spectator.describe Term::Reader::KeyEvent do
   let(:keys) { Term::Reader::KEYS }
 
@@ -9,7 +38,7 @@ Spectator.describe Term::Reader::KeyEvent do
     expect(event.value).to eq("\x7f")
   end
 
-it "parses lowercase char" do
+  it "parses lowercase char" do
     event = described_class.from(keys, "a")
     expect(event.key.name).to eq("alpha")
     expect(event.value).to eq("a")
@@ -48,22 +77,9 @@ it "parses lowercase char" do
   end
 
   # F1-F12 keys
-  {% for name, codes in {\
-    f1:  ["\eOP","\e[[A","\e[11~"],\
-    f2:  ["\eOQ","\e[[B","\e[12~"],\
-    f3:  ["\eOR","\e[[C","\e[13~"],\
-    f4:  ["\eOS","\e[[D","\e[14~"],\
-    f5:  [       "\e[[E","\e[15~"],\
-    f6:  [               "\e[17~"],\
-    f7:  [               "\e[18~"],\
-    f8:  [               "\e[19~"],\
-    f9:  [               "\e[20~"],\
-    f10: [               "\e[21~"],\
-    f11: [               "\e[23~"],\
-    f12: [               "\e[24~"] \
-  } %}
+  {% for name, codes in F_KEYS %}
     {% for code in codes %}
-      it "parses #{code} as #{name} key" do
+      it "parses {{code.id}} as {{name.id}} key" do
         event = described_class.from(keys, {{ code }})
         expect(event.key.name).to eq({{ name.id.stringify }})
         expect(event.key.meta).to eq(false)
@@ -74,21 +90,9 @@ it "parses lowercase char" do
   {% end %}
 
   # arrow keys & text editing
-  {% for name, codes in {\
-    up:        ["\e[A"],\
-    down:      ["\e[B"],\
-    right:     ["\e[C"],\
-    left:      ["\e[D"],\
-    clear:     ["\e[E"],\
-    home:      ["\e[1~", "\e[7~", "\e[H"],\
-    end:       ["\e[4~", "\eOF", "\e[F"],\
-    insert:    ["\e[2~"],\
-    delete:    ["\e[3~"],\
-    page_up:   ["\e[5~"],\
-    page_down: ["\e[6~"]\
-   } %}
+  {% for name, codes in OTHER_KEYS %}
     {% for code in codes %}
-      it "parses #{Shellwords.escape(code)} as #{name} key" do
+      it "parses {{code.id}} as {{name.id}} key" do
         event = described_class.from(keys, {{ code }})
         expect(event.key.name).to eq({{ name.id.stringify }})
         expect(event.key.meta).to eq(false)
