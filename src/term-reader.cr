@@ -13,10 +13,10 @@ module Term
     class InputInterrupt < Exception; end
 
     # Key codes
-    CARRIAGE_RETURN =  13
-    NEWLINE         =  10
-    BACKSPACE       =   8
-    DELETE          =  27
+    CARRIAGE_RETURN = 13
+    NEWLINE         = 10
+    BACKSPACE       =  8
+    DELETE          = 27
 
     getter input : IO::FileDescriptor
     getter output : IO::FileDescriptor
@@ -34,19 +34,18 @@ module Term
     @event_handlers : Hash(String, Array(Proc(String, KeyEvent, Nil)))
 
     # :nodoc:
-    class_property global_handlers : Hash(String, Array(Proc(String, KeyEvent, Nil))) =
-      Hash(String, Array(Proc(String, KeyEvent, Nil))).new { |h, k|
-        h[k] = [] of Proc(String, KeyEvent, Nil)
-      }
+    class_property global_handlers : Hash(String, Array(Proc(String, KeyEvent, Nil))) = Hash(String, Array(Proc(String, KeyEvent, Nil))).new { |h, k|
+      h[k] = [] of Proc(String, KeyEvent, Nil)
+    }
 
     def initialize(@input : IO::FileDescriptor = STDIN,
-                  @output : IO::FileDescriptor = STDOUT,
-                  @env : Hash(String, String) = ENV.to_h,
-                  @interrupt : Symbol = :error,
-                  @track_history : Bool = true,
-                  @history_cycle : Bool = false,
-                  @history_exclude : String -> Bool = ->(s : String) { s.strip.empty? },
-                  @history_duplicates : Bool = false)
+                   @output : IO::FileDescriptor = STDOUT,
+                   @env : Hash(String, String) = ENV.to_h,
+                   @interrupt : Symbol = :error,
+                   @track_history : Bool = true,
+                   @history_cycle : Bool = false,
+                   @history_exclude : String -> Bool = ->(s : String) { s.strip.empty? },
+                   @history_duplicates : Bool = false)
       @console = Console.new(@input)
       @event_handlers = Hash(String, Array(Proc(String, KeyEvent, Nil))).new do |h, k|
         h[k] = [] of Proc(String, KeyEvent, Nil)
@@ -92,7 +91,7 @@ module Term
     # Nothing is echoed to the console. This call will block for
     # a single keypress, but will not wait for Enter to be pressed.
     def read_keypress(echo = false, raw = true, nonblock = false)
-      codes = unbuffered { get_codes(echo: echo, raw: raw, nonblock: nonblock) }
+      codes = unbuffered { get_codes(echo, raw, nonblock) }
       char = codes ? codes.map(&.chr).join : nil
 
       trigger_key_event(char) if char
@@ -102,7 +101,7 @@ module Term
     # Get input code points
     # FIXME: Fails to handle escape '\e' all by itself
     def get_codes(codes = [] of Int32, echo = true, raw = false, nonblock = false)
-      char = console.get_char(echo: true, raw: false)
+      char = console.get_char(echo, raw, nonblock)
       handle_interrupt if console.keys[char.to_s]? == "ctrl_c"
       return if char.nil?
       codes << char.ord
@@ -114,7 +113,7 @@ module Term
       end
 
       while console.escape_codes.any?(condition)
-        char_codes = get_codes(codes: codes, echo: echo, raw: raw, nonblock: true)
+        char_codes = get_codes(codes, echo, raw, true)
         break if char_codes.nil?
       end
 
@@ -131,7 +130,7 @@ module Term
       @output.print(line.to_s)
 
       loop do
-        codes = get_codes(echo: echo, raw: raw, nonblock: nonblock)
+        codes = get_codes(echo, raw, nonblock)
         break unless codes && !codes.empty?
 
         code = codes[0]
@@ -307,9 +306,9 @@ module Term
       key = event.key.name
 
       (@event_handlers[key] +
-       @event_handlers[""] +
-       self.class.global_handlers[key] +
-       self.class.global_handlers[""]).each do |proc|
+        @event_handlers[""] +
+        self.class.global_handlers[key] +
+        self.class.global_handlers[""]).each do |proc|
         proc.call(event.key.name, event)
       end
     end
@@ -321,8 +320,8 @@ module Term
         Process.signal(:int, Process.pid)
       when :exit
         exit(130)
-      # when Proc
-      #   @interrupt.call
+        # when Proc
+        #   @interrupt.call
       when :noop
         return
       else

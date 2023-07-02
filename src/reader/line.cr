@@ -28,7 +28,7 @@ module Term
       # Create a Line instance
       def initialize(@text = "", @prompt = "")
         @cursor = [0, @text.size].max
-        @mode   = Mode::Edit
+        @mode = Mode::Edit
       end
 
       # ditto
@@ -91,7 +91,7 @@ module Term
       # Insert characters inside a line. When the lines exceeds
       # maximum length, an extra space is added to accomodate index.
       #
-      # ```crystal
+      # ```
       # text = "aaa"
       # line[5] = "b"
       # => "aaa  b"
@@ -107,8 +107,8 @@ module Term
           after_text = " " * (i - @text.size)
           @cursor += after_text.size
         else
-          before_text = @text[0..i-1]
-          after_text  = @text[i..-1]
+          before_text = @text[0..i - 1]
+          after_text = @text[i..-1]
         end
 
         if i > @text.size - 1
@@ -123,7 +123,7 @@ module Term
       # Insert characters inside a line. When the lines exceeds
       # maximum length, an extra space is added to accomodate index.
       def []=(range : Range, chars)
-        @text =  @text.sub(range, chars)
+        @text = @text.sub(range, chars)
         @cursor += chars.size
       end
 
@@ -177,7 +177,7 @@ module Term
         p = self.class.sanitize(@prompt).split(/\r?\n/)
         # return the length of each line + screen width for every line past the first
         # which accounts for multi-line prompts
-        p.join.size + ((p.size - 1) * Term::Screen.width )
+        p.join.size + ((p.size - 1) * Term::Screen.width)
       end
 
       # Text size
@@ -190,5 +190,5 @@ module Term
         prompt_size + text_size
       end
     end # Line
-  end # Reader
-end # Term
+  end   # Reader
+end     # Term

@@ -1,7 +1,7 @@
 require "../spec_helper"
 
 Spectator.describe Term::Reader::Line do
-it "provides access to the prompt" do
+  it "provides access to the prompt" do
     line = described_class.new("aaa", prompt: ">> ")
     expect(line.prompt).to eq(">> ")
     expect(line.text).to eq("aaa")
