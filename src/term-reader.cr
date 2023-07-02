@@ -65,6 +65,11 @@ module Term
 
     # Listen for specific keys (or all keys if `keys` is empty)
     def on_key(*keys : String | Symbol, &block : HandlerFunc) : Nil
+      on_key keys, &block
+    end
+
+    # :ditto:
+    def on_key(keys : Enumerable(String | Symbol) = [] of Symbol, &block : HandlerFunc) : Nil
       if keys.empty?
         @event_handlers[""] << block
       else
