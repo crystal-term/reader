@@ -21,23 +21,18 @@ module Term
         @escape_codes = {[ESC.ord.to_u8], CSI.bytes}
       end
 
-      def get_char(raw : Bool = false,
-                   echo : Bool = false,
-                   nonblock : Bool = false)
-        ret = nil
+      def get_char(raw : Bool, echo : Bool, nonblock : Bool) : Char?
+        char = nil
         mode.cooked(!raw) do
           mode.raw(raw) do
             mode.echo(echo) do
-              if nonblock
-                @input.wait_readable(TIMEOUT)
-                ret = @input.read_char
-              else
-                ret = @input.read_char
-              end
+              @input.blocking = !nonblock
+              char = @input.read_char
             end
           end
         end
-        ret ? ret.not_nil! : nil
+
+        char
       rescue
         nil
       end
