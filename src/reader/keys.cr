@@ -1,6 +1,6 @@
 module Term
   class Reader
-    CTRL_KEYS = {
+    CONTROL_KEYS = {
       "\u0001"  => "ctrl_a",
       "\u0002"  => "ctrl_b",
       "\u0003"  => "ctrl_c",
@@ -115,7 +115,7 @@ module Term
       "\e[24;2~" => "f24",
     }
 
-    WIN_KEYS = {
+    WINDOWS_KEYS = {
       "\t"         => "tab",
       "\n"         => "enter",
       "\r"         => "return",

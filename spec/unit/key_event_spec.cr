@@ -58,7 +58,7 @@ Spectator.describe Term::Reader::KeyEvent do
 
   it "parses ctrl-a to ctrl-z inputs" do
     (1..26).zip('a'..'z').each do |code, char|
-      event = described_class.from(Term::Reader::CTRL_KEYS, code.chr)
+      event = described_class.from(Term::Reader::CONTROL_KEYS, code.chr)
       expect(event.key.name).to eq("ctrl_#{char}")
       expect(event.value).to eq(code.chr.to_s)
     end

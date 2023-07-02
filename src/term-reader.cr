@@ -12,6 +12,8 @@ module Term
     # Raised when a user hits ctrl-c
     class InputInterrupt < Exception; end
 
+    alias HandlerFunc = String, KeyEvent -> Nil
+
     # Key codes
     CARRIAGE_RETURN = 13
     NEWLINE         = 10
@@ -24,18 +26,16 @@ module Term
 
     # Do we want to keep a log of things as they happen
     getter? track_history : Bool
-
     getter console : Console
     getter cursor : Term::Cursor.class
     getter history : History
-
     getter interrupt : Symbol
 
-    @event_handlers : Hash(String, Array(Proc(String, KeyEvent, Nil)))
+    @event_handlers : Hash(String, Array(HandlerFunc))
 
     # :nodoc:
-    class_property global_handlers : Hash(String, Array(Proc(String, KeyEvent, Nil))) = Hash(String, Array(Proc(String, KeyEvent, Nil))).new { |h, k|
-      h[k] = [] of Proc(String, KeyEvent, Nil)
+    class_property global_handlers : Hash(String, Array(HandlerFunc)) = Hash(String, Array(HandlerFunc)).new { |h, k|
+      h[k] = [] of HandlerFunc
     }
 
     def initialize(@input : IO::FileDescriptor = STDIN,
@@ -47,8 +47,8 @@ module Term
                    @history_exclude : String -> Bool = ->(s : String) { s.strip.empty? },
                    @history_duplicates : Bool = false)
       @console = Console.new(@input)
-      @event_handlers = Hash(String, Array(Proc(String, KeyEvent, Nil))).new do |h, k|
-        h[k] = [] of Proc(String, KeyEvent, Nil)
+      @event_handlers = Hash(String, Array(HandlerFunc)).new do |h, k|
+        h[k] = [] of HandlerFunc
       end
 
       @history = History.new do |h|
@@ -64,7 +64,7 @@ module Term
     end
 
     # Listen for specific keys (or all keys if `keys` is empty)
-    def on_key(keys = [] of String | Symbol, &block : String, KeyEvent ->)
+    def on_key(keys = [] of String | Symbol, &block : HandlerFunc)
       if keys.empty?
         @event_handlers[""] << block
       else
@@ -91,7 +91,7 @@ module Term
     # Nothing is echoed to the console. This call will block for
     # a single keypress, but will not wait for Enter to be pressed.
     def read_keypress(echo = false, raw = true, nonblock = false)
-      codes = unbuffered { get_codes(echo, raw, nonblock) }
+      codes = unbuffered { get_codes([] of Int32, echo, raw, nonblock) }
       char = codes ? codes.map(&.chr).join : nil
 
       trigger_key_event(char) if char
@@ -127,10 +127,10 @@ module Term
       line = Line.new(value, prompt: prompt)
       screen_width = Term::Screen.width
 
-      @output.print(line.to_s)
+      @output.print(line.to_s) # Why is this here??
 
       loop do
-        codes = get_codes(echo, raw, nonblock)
+        codes = get_codes([] of Int32, echo, raw, nonblock)
         break unless codes && !codes.empty?
 
         code = codes[0]
@@ -331,13 +331,13 @@ module Term
     end
 
     macro subscribe(*keys)
-      {% valid_keys = (Term::Reader::CTRL_KEYS.values + Term::Reader::KEYS.values).uniq %}
+      {% valid_keys = (Term::Reader::CONTROL_KEYS.values + Term::Reader::KEYS.values).uniq %}
       {% for key in keys %}
         {% if key.id.symbolize == :keypress %}
-          %kp = Proc(String, Term::Reader::KeyEvent, Nil).new { |k, e| self.keypress(k, e); nil }
+          %kp = HandlerFunc.new { |k, e| self.keypress(k, e); nil }
           Term::Reader.global_handlers[""] << %kp
         {% elsif keys.includes?(key.id.stringify) || keys.includes?(key.id.symbolize) %}
-          %kp{key.id} = Proc(String, Term::Reader::KeyEvent, Nil).new { |k, e| self.key{{ key.id }}; nil }
+          %kp{key.id} = HandlerFunc.new { |k, e| self.key{{ key.id }}; nil }
           Term::Reader.global_handlers[{{ key.id.stringify }}] << %kp{key.id}
         {% end %}
       {% end %}

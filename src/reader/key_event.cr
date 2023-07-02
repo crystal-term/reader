@@ -27,9 +27,7 @@ module Term
         when /^\d+$/
           name = "num"
         else
-          if !!Reader::CTRL_KEYS[char]?
-            ctrl = true
-          end
+          ctrl = Reader::CONTROL_KEYS.has_key? char
         end
 
         key = Key.new(name, ctrl, meta, shift)
