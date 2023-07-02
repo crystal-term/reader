@@ -5,29 +5,29 @@ module Term
       end
 
       # Echo given block
-      def echo(is_on : Bool = true, &block)
+      def echo(is_on : Bool = true, & : ->)
         if is_on || !@input.tty?
           yield
         else
-          @input.noecho { block.call }
+          @input.noecho { yield }
         end
       end
 
       # Use raw mode in the given block
-      def raw(is_on : Bool = true, &block)
+      def raw(is_on : Bool = true, & : ->)
         if is_on || !@input.tty?
           yield
         else
-          @input.raw { block.call }
+          @input.raw { yield }
         end
       end
 
       # Enable character processing for the given block
-      def cooked(is_on : Bool = true, &block)
+      def cooked(is_on : Bool = true, & : ->)
         if is_on || !@input.tty?
           yield
         else
-          @input.cooked { block.call }
+          @input.cooked { yield }
         end
       end
     end
