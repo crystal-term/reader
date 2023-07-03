@@ -12,11 +12,13 @@ module Term
     # Raised when a user hits ctrl-c
     class InputInterrupt < Exception; end
 
+    alias HandlerFunc = String, KeyEvent -> Nil
+
     # Key codes
-    CARRIAGE_RETURN =  13
-    NEWLINE         =  10
-    BACKSPACE       =   8
-    DELETE          =  27
+    CARRIAGE_RETURN = 13
+    NEWLINE         = 10
+    BACKSPACE       =  8
+    DELETE          = 27
 
     getter input : IO::FileDescriptor
     getter output : IO::FileDescriptor
@@ -24,32 +26,29 @@ module Term
 
     # Do we want to keep a log of things as they happen
     getter? track_history : Bool
-
     getter console : Console
     getter cursor : Term::Cursor.class
     getter history : History
-
     getter interrupt : Symbol
 
-    @event_handlers : Hash(String, Array(Proc(String, KeyEvent, Nil)))
+    @event_handlers : Hash(String, Array(HandlerFunc))
 
     # :nodoc:
-    class_property global_handlers : Hash(String, Array(Proc(String, KeyEvent, Nil))) =
-      Hash(String, Array(Proc(String, KeyEvent, Nil))).new { |h, k|
-        h[k] = [] of Proc(String, KeyEvent, Nil)
-      }
+    class_property global_handlers : Hash(String, Array(HandlerFunc)) = Hash(String, Array(HandlerFunc)).new { |h, k|
+      h[k] = [] of HandlerFunc
+    }
 
     def initialize(@input : IO::FileDescriptor = STDIN,
-                  @output : IO::FileDescriptor = STDOUT,
-                  @env : Hash(String, String) = ENV.to_h,
-                  @interrupt : Symbol = :error,
-                  @track_history : Bool = true,
-                  @history_cycle : Bool = false,
-                  @history_exclude : String -> Bool = ->(s : String) { s.strip.empty? },
-                  @history_duplicates : Bool = false)
+                   @output : IO::FileDescriptor = STDOUT,
+                   @env : Hash(String, String) = ENV.to_h,
+                   @interrupt : Symbol = :error,
+                   @track_history : Bool = true,
+                   @history_cycle : Bool = false,
+                   @history_exclude : String -> Bool = ->(s : String) { s.strip.empty? },
+                   @history_duplicates : Bool = false)
       @console = Console.new(@input)
-      @event_handlers = Hash(String, Array(Proc(String, KeyEvent, Nil))).new do |h, k|
-        h[k] = [] of Proc(String, KeyEvent, Nil)
+      @event_handlers = Hash(String, Array(HandlerFunc)).new do |h, k|
+        h[k] = [] of HandlerFunc
       end
 
       @history = History.new do |h|
@@ -65,7 +64,12 @@ module Term
     end
 
     # Listen for specific keys (or all keys if `keys` is empty)
-    def on_key(keys = [] of String | Symbol, &block : String, KeyEvent ->)
+    def on_key(*keys : String | Symbol, &block : HandlerFunc) : Nil
+      on_key keys, &block
+    end
+
+    # :ditto:
+    def on_key(keys : Enumerable(String | Symbol) = [] of Symbol, &block : HandlerFunc) : Nil
       if keys.empty?
         @event_handlers[""] << block
       else
@@ -73,11 +77,10 @@ module Term
           @event_handlers[key.to_s] << block
         end
       end
-      block
     end
 
     # Get input in unbuffered mode.
-    def unbuffered(&block)
+    def unbuffered(& : ->)
       buffering = @output.sync?
       # Immidiately flush output
       @output.sync = true
@@ -91,9 +94,9 @@ module Term
     #
     # Nothing is echoed to the console. This call will block for
     # a single keypress, but will not wait for Enter to be pressed.
-    def read_keypress(echo = false, raw = true, nonblock = false)
-      codes = unbuffered { get_codes(echo: echo, raw: raw, nonblock: nonblock) }
-      char = codes ? codes.map(&.chr).join : nil
+    def read_keypress(echo : Bool = false, raw : Bool = true, nonblock : Bool = false) : String?
+      codes = unbuffered { get_codes(echo, raw, nonblock) }
+      char = codes.try &.map(&.chr).join
 
       trigger_key_event(char) if char
       char
@@ -101,12 +104,12 @@ module Term
 
     # Get input code points
     # FIXME: Fails to handle escape '\e' all by itself
-    def get_codes(codes = [] of Int32, echo = true, raw = false, nonblock = false)
-      char = console.get_char(echo: true, raw: false)
+    def get_codes(echo : Bool, raw : Bool, nonblock : Bool) : Array(Int32)?
+      char = console.get_char(echo, raw, nonblock)
       handle_interrupt if console.keys[char.to_s]? == "ctrl_c"
-      return if char.nil?
-      codes << char.ord
+      return nil if char.nil?
 
+      codes = [char.ord] of Int32
       condition = ->(escape : Array(UInt8)) do
         (codes - escape).empty? ||
         (escape - codes).empty? &&
@@ -114,8 +117,9 @@ module Term
       end
 
       while console.escape_codes.any?(condition)
-        char_codes = get_codes(codes: codes, echo: echo, raw: raw, nonblock: true)
+        char_codes = get_codes(echo, raw, true)
         break if char_codes.nil?
+        codes.concat char_codes
       end
 
       codes
@@ -124,20 +128,21 @@ module Term
     # Get a signal line from STDIN. Each key pressed is echoed
     # back to the shell. The input terminates when enter or
     # return key is pressed.
-    def read_line(prompt = "", value = "", echo = true, raw = true, nonblock = false)
+    def read_line(*, prompt : String = "", value : String = "", echo : Bool = true,
+                  raw : Bool = true, nonblock : Bool = false) : String
       line = Line.new(value, prompt: prompt)
       screen_width = Term::Screen.width
 
       @output.print(line.to_s)
 
       loop do
-        codes = get_codes(echo: echo, raw: raw, nonblock: nonblock)
+        codes = get_codes(echo, raw, nonblock)
         break unless codes && !codes.empty?
 
         code = codes[0]
         char = codes.map(&.chr).join
 
-        if ["ctrl_z", "ctrl_d"].includes?(console.keys[char]?)
+        if {"ctrl_z", "ctrl_d"}.includes?(console.keys[char]?)
           trigger_key_event(char, line: line.to_s)
           break
         end
@@ -196,7 +201,7 @@ module Term
           end
         end
 
-        if [CARRIAGE_RETURN, NEWLINE].includes?(code)
+        if {CARRIAGE_RETURN, NEWLINE}.includes?(code)
           output.puts unless echo
           break
         end
@@ -213,7 +218,7 @@ module Term
     #
     # Handles clearing input that is longer than the current
     # terminal width, which allows copy + pasting long strings.
-    def clear_display(line, screen_width = Term::Screen.width)
+    def clear_display(line : Line, screen_width : Int32) : Nil
       total_lines = count_screen_lines(line.to_s, screen_width)
       current_line = count_screen_lines(line.prompt_size + line.cursor, screen_width)
       lines_down = total_lines - current_line
@@ -224,13 +229,13 @@ module Term
 
     # Count the number of screen lines the given line
     # takes up in the terminal.
-    def count_screen_lines(line : String, screen_width = Term::Screen.width)
+    def count_screen_lines(line : String, screen_width : Int32) : Int32
       line_size = Line.sanitize(line).size
       count_screen_lines(line_size, screen_width)
     end
 
     # ditto
-    def count_screen_lines(size : Int, screen_width = Term::Screen.width)
+    def count_screen_lines(size : Int, screen_width : Int32) : Int32
       1 + [0, (size - 1) // screen_width].max
     end
 
@@ -238,61 +243,66 @@ module Term
     # Skip empty lines in the returned lines array.
     # The input gathering is terminated by Ctrl+d or
     # Ctrl+z.
-    def read_multiline(prompt = "")
+    def read_multiline(prompt : String = "") : Array(String)
       read_multiline(prompt) { }
     end
 
     # ditto
-    def read_multiline(prompt = "", &block : String ->)
+    def read_multiline(prompt : String = "", & : String ->) : Array(String)
       @stop = false
       lines = [] of String
+
       until @stop
-        line = read_line(prompt)
+        line = read_line(prompt: prompt)
         break if !line || line.strip.empty?
         next if line !~ /\S/ && !@stop
         lines << line
         yield line
       end
+
       lines
     end
 
-    def keyctrl_d
+    def keyctrl_d : Nil
       @stop = true
     end
 
-    def keyctrl_z
+    def keyctrl_z : Nil
       keyctrl_d
     end
 
-    def add_to_history(line)
+    def add_to_history(line : String)
       @history << line
     end
 
-    def history_next?
+    def history_next? : Bool
       @history.next?
     end
 
-    def history_next
+    def history_next : String?
       @history.next
       @history.get
     end
 
-    def history_previous?
+    def history_previous? : Bool
       @history.previous?
     end
 
-    def history_previous
+    def history_previous : String?
       line = @history.get
       @history.previous
       line
     end
 
     # Inspect class name and public attributes
-    def inspect
-      "#<#{self.class}: @input=#{input}, @output=#{output}>"
+    def inspect(io : IO) : Nil
+      io << "#<" << self.class
+      io << ": @input=" << input
+      io << ", @output=" << output
+      io << '>'
     end
 
-    private def unpack_array(arr : Array(Int))
+    private def unpack_array(arr : Array(Int32)) : String
       io = IO::Memory.new
       arr.each do |i|
         io.write_bytes(i)
@@ -302,27 +312,27 @@ module Term
     end
 
     # Publish event
-    private def trigger_key_event(char : String, line : String = "")
+    private def trigger_key_event(char : String, line : String = "") : Nil
       event = KeyEvent.from(console.keys, char, line)
       key = event.key.name
 
       (@event_handlers[key] +
-       @event_handlers[""] +
-       self.class.global_handlers[key] +
-       self.class.global_handlers[""]).each do |proc|
+        @event_handlers[""] +
+        self.class.global_handlers[key] +
+        self.class.global_handlers[""]).each do |proc|
         proc.call(event.key.name, event)
       end
     end
 
     # Handle input interrupt based on provided value
-    private def handle_interrupt
+    private def handle_interrupt : Nil
       case @interrupt
       when :signal
         Process.signal(:int, Process.pid)
       when :exit
         exit(130)
-      # when Proc
-      #   @interrupt.call
+        # when Proc
+        #   @interrupt.call
       when :noop
         return
       else
@@ -332,13 +342,13 @@ module Term
     end
 
     macro subscribe(*keys)
-      {% valid_keys = (Term::Reader::CTRL_KEYS.values + Term::Reader::KEYS.values).uniq %}
+      {% valid_keys = (Term::Reader::CONTROL_KEYS.values + Term::Reader::KEYS.values).uniq %}
       {% for key in keys %}
         {% if key.id.symbolize == :keypress %}
-          %kp = Proc(String, Term::Reader::KeyEvent, Nil).new { |k, e| self.keypress(k, e); nil }
+          %kp = HandlerFunc.new { |k, e| self.keypress(k, e); nil }
           Term::Reader.global_handlers[""] << %kp
         {% elsif keys.includes?(key.id.stringify) || keys.includes?(key.id.symbolize) %}
-          %kp{key.id} = Proc(String, Term::Reader::KeyEvent, Nil).new { |k, e| self.key{{ key.id }}; nil }
+          %kp{key.id} = HandlerFunc.new { |k, e| self.key{{ key.id }}; nil }
           Term::Reader.global_handlers[{{ key.id.stringify }}] << %kp{key.id}
         {% end %}
       {% end %}

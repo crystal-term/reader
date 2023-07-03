@@ -27,9 +27,7 @@
 - Ability to listen for keystroke events
 - Track input history
 - No global state
-- Cross platform*
-
-_\* Windows support is not yet implemented since Crystal itself doesn't support Windows natively._
+- Cross platform
 
 ## Installation
 
@@ -70,7 +68,7 @@ Finally show the user a prompt, and keep looping until we exit:
 
 ```crystal
 loop do
-  reader.read_line("=> ")
+  reader.read_line(prompt: "=> ")
 end
 ```
 
@@ -107,17 +105,17 @@ Any non-interpreted characters received are written back to the terminal, howeve
 reader.read_line(echo: false)
 ```
 
-You can also provide a line prefix (prompt) by passing it as the first argument:
+You can also provide a line prefix by specifying the `prompt` parameter:
 
 ```crystal
-reader.read_line("=> ")
+reader.read_line(prompt: "=> ")
 # =>
 ```
 
-To pre-populate the line content for editing, use the `value` option:
+To pre-populate the line content for editing, specify the `value` parameter:
 
 ```crystal
-reader.read_line("=>", value: "edit me")
+reader.read_line(prompt: "=>", value: "edit me")
 # => edit me
 ```
 

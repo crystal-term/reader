@@ -4,12 +4,12 @@ module Term
   class Reader
     # Responsible for meta-data information about key pressed
     record Key,
-           name : String,
-           ctrl : Bool = false,
-           meta : Bool = false,
-           shift : Bool = false
+      name : String,
+      ctrl : Bool = false,
+      meta : Bool = false,
+      shift : Bool = false
 
-   # Represents key event emitted during keyboard press
+    # Represents key event emitted during keyboard press
     record KeyEvent, key : Key, value : String, line : String do
       def self.from(keys : Hash(String, String),
                     char : String | Char,
@@ -27,9 +27,7 @@ module Term
         when /^\d+$/
           name = "num"
         else
-          if !!Reader::CTRL_KEYS[char]?
-            ctrl = true
-          end
+          ctrl = Reader::CONTROL_KEYS.has_key? char
         end
 
         key = Key.new(name, ctrl, meta, shift)

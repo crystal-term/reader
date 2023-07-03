@@ -32,13 +32,13 @@ module Term
         @history = [] of String
       end
 
-      def self.new(**options, &block : self ->)
+      def self.new(**options, & : self ->)
         history = new(**options)
         yield history
         history
       end
 
-      def push(line : String)
+      def push(line : String) : String
         @history.delete(line) unless duplicates
         return line if line.empty? || @exclude.call(line)
 
@@ -49,11 +49,11 @@ module Term
         line
       end
 
-      def <<(line : String)
+      def <<(line : String) : String
         push(line)
       end
 
-      def next
+      def next : Nil
         return if size.zero?
         if @index == size - 1
           @index = 0 if @cycle
@@ -62,15 +62,15 @@ module Term
         end
       end
 
-      def next?
+      def next? : Bool
         size > 0 && !(@index == size - 1 && !@cycle)
       end
 
-      def succ
+      def succ : Nil
         self.next
       end
 
-      def previous
+      def previous : Nil
         return if size.zero?
         if @index.zero?
           @index = size - 1 if @cycle
@@ -79,27 +79,27 @@ module Term
         end
       end
 
-      def previous?
+      def previous? : Bool
         size > 0 && !(@index < 0 && !cycle)
       end
 
-      def pred
+      def pred : Nil
         self.previous
       end
 
-      def [](index : Int)
+      def [](index : Int) : String
         if index < 0
           index += @history.size
         end
         @history[index]
       end
 
-      def get
+      def get : String?
         return if size.zero?
         self[@index]
       end
 
-      def clear
+      def clear : Nil
         @history.clear
         @index = 0
       end

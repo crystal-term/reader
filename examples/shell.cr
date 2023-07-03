@@ -8,6 +8,8 @@ reader = Term::Reader.new
 reader.on_key(:ctrl_x) { puts "Exiting..."; exit }
 
 loop do
-  cmd = reader.read_line("=> ")
-  puts `#{cmd}`
+  cmd = reader.read_line(prompt: "=> ")
+  puts `#{cmd.strip}`
+rescue ex
+  puts ex
 end
