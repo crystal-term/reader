@@ -345,10 +345,10 @@ module Term
       {% valid_keys = (Term::Reader::CONTROL_KEYS.values + Term::Reader::KEYS.values).uniq %}
       {% for key in keys %}
         {% if key.id.symbolize == :keypress %}
-          %kp = HandlerFunc.new { |k, e| self.keypress(k, e); nil }
+          %kp = Term::Reader::HandlerFunc.new { |k, e| self.keypress(k, e); nil }
           Term::Reader.global_handlers[""] << %kp
         {% elsif keys.includes?(key.id.stringify) || keys.includes?(key.id.symbolize) %}
-          %kp{key.id} = HandlerFunc.new { |k, e| self.key{{ key.id }}; nil }
+          %kp{key.id} = Term::Reader::HandlerFunc.new { |k, e| self.key{{ key.id }}; nil }
           Term::Reader.global_handlers[{{ key.id.stringify }}] << %kp{key.id}
         {% end %}
       {% end %}
