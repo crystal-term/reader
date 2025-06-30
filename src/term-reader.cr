@@ -94,8 +94,8 @@ module Term
     #
     # Nothing is echoed to the console. This call will block for
     # a single keypress, but will not wait for Enter to be pressed.
-    def read_keypress(echo : Bool = false, raw : Bool = true, nonblock : Bool = false) : String?
-      codes = unbuffered { get_codes(echo, raw, nonblock) }
+    def read_keypress(echo : Bool = false, raw : Bool = true, nonblock : Bool = false, interrupt : Symbol | Proc? = nil) : String?
+      codes = unbuffered { get_codes(echo, raw, nonblock, interrupt || @interrupt) }
       char = codes.try &.map(&.chr).join
 
       trigger_key_event(char) if char
@@ -104,9 +104,9 @@ module Term
 
     # Get input code points
     # FIXME: Fails to handle escape '\e' all by itself
-    def get_codes(echo : Bool, raw : Bool, nonblock : Bool) : Array(Int32)?
+    def get_codes(echo : Bool, raw : Bool, nonblock : Bool, interrupt : Symbol | Proc = @interrupt) : Array(Int32)?
       char = console.get_char(echo, raw, nonblock)
-      handle_interrupt if console.keys[char.to_s]? == "ctrl_c"
+      handle_interrupt(interrupt) if console.keys[char.to_s]? == "ctrl_c"
       return nil if char.nil?
 
       codes = [char.ord] of Int32
@@ -133,6 +133,7 @@ module Term
       line = Line.new(value, prompt: prompt)
       screen_width = Term::Screen.width
 
+      # Print the initial prompt/line
       @output.print(line.to_s)
 
       loop do
@@ -193,16 +194,27 @@ module Term
         trigger_key_event(char, line: line.to_s)
 
         if raw && echo
-          output.print(line.to_s)
-          if char == "\n"
+          # Don't redraw the line when Enter is pressed to avoid duplication
+          unless char == "\n"
+            output.print(line.to_s)
+            unless line.end? # readjust the cursor position
+              output.print(cursor.backward(line.text_size - line.cursor))
+            end
+          else
             line.move_to_start
-          elsif !line.end? # readjust the cursor position
-            output.print(cursor.backward(line.text_size - line.cursor))
           end
         end
 
         if {CARRIAGE_RETURN, NEWLINE}.includes?(code)
-          output.puts unless echo
+          # For multiline with echo, cursor needs to move to next line
+          # Only add newline if line doesn't already end with one
+          if echo && raw
+            unless line.text.ends_with?("\n")
+              output.print("\n")
+            end
+          elsif !echo
+            output.puts
+          end
           break
         end
 
@@ -325,14 +337,14 @@ module Term
     end
 
     # Handle input interrupt based on provided value
-    private def handle_interrupt : Nil
-      case @interrupt
+    private def handle_interrupt(interrupt : Symbol | Proc = @interrupt) : Nil
+      case interrupt
       when :signal
         Process.signal(:int, Process.pid)
       when :exit
         exit(130)
-        # when Proc
-        #   @interrupt.call
+      when Proc
+        interrupt.as(Proc).call
       when :noop
         return
       else
@@ -347,7 +359,7 @@ module Term
         {% if key.id.symbolize == :keypress %}
           %kp = Term::Reader::HandlerFunc.new { |k, e| self.keypress(k, e); nil }
           Term::Reader.global_handlers[""] << %kp
-        {% elsif keys.includes?(key.id.stringify) || keys.includes?(key.id.symbolize) %}
+        {% elsif valid_keys.includes?(key.id.stringify) %}
           %kp{key.id} = Term::Reader::HandlerFunc.new { |k, e| self.key{{ key.id }}; nil }
           Term::Reader.global_handlers[{{ key.id.stringify }}] << %kp{key.id}
         {% end %}
