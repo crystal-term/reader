@@ -195,9 +195,9 @@ Spectator.describe "Term::Reader event subscription" do
       input.inject_input("\x04") # Ctrl+D
       reader.read_keypress
       
-      expect(control_keys).to include("ctrl_a")
-      expect(control_keys).to include("ctrl_c")
-      expect(control_keys).to include("ctrl_d")
+      expect(control_keys).to contain("ctrl_a")
+      expect(control_keys).to contain("ctrl_c")
+      expect(control_keys).to contain("ctrl_d")
     end
   end
   

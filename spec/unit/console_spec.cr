@@ -7,8 +7,8 @@ Spectator.describe Term::Reader::Console do
   let(console) { described_class.new(mock_input) }
   
   describe "#keys" do
-    it "returns the Keys instance" do
-      expect(console.keys).to be_a(Term::Reader::Keys)
+    it "returns the keys hash" do
+      expect(console.keys).to be_a(Hash(String, String))
     end
   end
   
@@ -56,12 +56,10 @@ Spectator.describe Term::Reader::Console do
     context "with echo enabled" do
       it "echoes the character to output" do
         mock_input.inject_input("x")
-        mock_output = MockFileDescriptor.new(1)
-        console_with_output = Term::Reader::Console.new(mock_input, output: mock_output)
         
-        char = console_with_output.get_char(echo: true, raw: true, nonblock: false)
+        char = console.get_char(echo: true, raw: true, nonblock: false)
         expect(char).to eq('x')
-        # Note: actual echo implementation might be in Mode
+        # Note: actual echo implementation is handled internally
       end
     end
     

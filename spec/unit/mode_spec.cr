@@ -40,13 +40,15 @@ Spectator.describe Term::Reader::Mode do
     end
   end
   
-  describe "#raw!" do
-    it "switches terminal to raw mode permanently" do
+  describe "#raw" do
+    it "switches terminal to raw mode temporarily" do
       mode = described_class.new(mock_input)
-      mode.raw!
+      result = nil
+      mode.raw(true) do
+        result = "raw mode active"
+      end
       
-      # Terminal should now be in raw mode
-      # Platform-specific verification would go here
+      expect(result).to eq("raw mode active")
     end
   end
   
@@ -65,12 +67,15 @@ Spectator.describe Term::Reader::Mode do
     end
   end
   
-  describe "#cooked!" do
-    it "switches terminal to cooked mode permanently" do
+  describe "#cooked" do
+    it "switches terminal to cooked mode temporarily" do
       mode = described_class.new(mock_input)
-      mode.cooked!
+      result = nil
+      mode.cooked(true) do
+        result = "cooked mode active"
+      end
       
-      # Terminal should now be in cooked mode
+      expect(result).to eq("cooked mode active")
     end
   end
   
@@ -114,23 +119,18 @@ Spectator.describe Term::Reader::Mode do
     end
   end
   
-  describe "#echo!" do
-    it "enables echo permanently" do
+  describe "#echo" do
+    it "enables echo temporarily" do
       mode = described_class.new(mock_input)
-      mode.echo!
+      result = nil
+      mode.echo(true) do
+        result = "echo mode active"
+      end
       
-      # Echo should now be enabled
+      expect(result).to eq("echo mode active")
     end
   end
   
-  describe "#echo_off!" do
-    it "disables echo permanently" do
-      mode = described_class.new(mock_input)
-      mode.echo_off!
-      
-      # Echo should now be disabled
-    end
-  end
   
   describe "mode combinations" do
     it "can combine raw mode with echo off" do
@@ -171,9 +171,9 @@ Spectator.describe Term::Reader::Mode do
       
       mode = described_class.new(closed_input)
       
-      # Should handle errors gracefully
-      expect { mode.raw! }.not_to raise_error
-      expect { mode.echo_off! }.not_to raise_error
+      # Should handle errors gracefully when using valid methods
+      expect { mode.raw(true) { } }.not_to raise_error
+      expect { mode.echo(false) { } }.not_to raise_error
     end
   end
   

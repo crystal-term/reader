@@ -162,7 +162,7 @@ module TestHelpers
     property? blocking_mode : Bool = true
     
     def initialize(fd : Int32 = 0)
-      super(fd, blocking: true)
+      super(handle: fd.unsafe_as(LibC::Int), close_on_finalize: false)
     end
     
     
