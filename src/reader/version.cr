@@ -1,5 +1,5 @@
 module Term
-  class Reader
-    VERSION = "0.3.0"
+  module Reader
+    VERSION = "0.2.0"
   end
 end
