@@ -20,8 +20,8 @@ module Term
     BACKSPACE       =  8
     DELETE          = 27
 
-    getter input : IO::FileDescriptor
-    getter output : IO::FileDescriptor
+    getter input : IO
+    getter output : IO
     getter env : Hash(String, String)
 
     # Do we want to keep a log of things as they happen
@@ -38,15 +38,20 @@ module Term
       h[k] = [] of HandlerFunc
     }
 
-    def initialize(@input : IO::FileDescriptor = STDIN,
-                   @output : IO::FileDescriptor = STDOUT,
+    def initialize(@input : IO = STDIN,
+                   @output : IO = STDOUT,
                    @env : Hash(String, String) = ENV.to_h,
                    @interrupt : Symbol = :error,
                    @track_history : Bool = true,
                    @history_cycle : Bool = false,
                    @history_exclude : String -> Bool = ->(s : String) { s.strip.empty? },
                    @history_duplicates : Bool = false)
-      @console = Console.new(@input)
+      @console = if @input.is_a?(IO::FileDescriptor)
+                   Console.new(@input.as(IO::FileDescriptor))
+                 else
+                   # For testing with non-FileDescriptor IO (like IO::Memory)
+                   Console.new(STDIN)
+                 end
       @event_handlers = Hash(String, Array(HandlerFunc)).new do |h, k|
         h[k] = [] of HandlerFunc
       end
@@ -105,6 +110,14 @@ module Term
     # Get input code points
     # FIXME: Fails to handle escape '\e' all by itself
     def get_codes(echo : Bool, raw : Bool, nonblock : Bool, interrupt : Symbol | Proc = @interrupt) : Array(Int32)?
+      # For non-FileDescriptor input (like IO::Memory for testing), read directly
+      if !@input.is_a?(IO::FileDescriptor)
+        char = @input.read_char
+        return nil if char.nil?
+        handle_interrupt(interrupt) if console.keys[char.to_s]? == "ctrl_c"
+        return [char.ord] of Int32
+      end
+
       char = console.get_char(echo, raw, nonblock)
       handle_interrupt(interrupt) if console.keys[char.to_s]? == "ctrl_c"
       return nil if char.nil?

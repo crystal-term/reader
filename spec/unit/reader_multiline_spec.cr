@@ -10,7 +10,7 @@ Spectator.describe Term::Reader do
       
       lines = reader.read_multiline
       
-      lines.should eq(["line1", "line2"])
+      expect(lines).to eq(["line1", "line2"])
     end
     
     it "reads multiple lines with echo enabled" do
@@ -22,7 +22,7 @@ Spectator.describe Term::Reader do
       
       # Check output - should not have extra blank lines
       output_str = output.to_s
-      output_str.should_not contain("\n\n\n")  # No triple newlines
+      expect(output_str).not_to contain("\n\n\n")  # No triple newlines
     end
     
     it "handles prompt correctly for first line only" do
@@ -33,9 +33,9 @@ Spectator.describe Term::Reader do
       lines = reader.read_multiline("Prompt> ")
       
       output_str = output.to_s
-      output_str.should start_with("Prompt> ")
+      expect(output_str).to start_with("Prompt> ")
       # Count occurrences of prompt - should only appear once
-      output_str.scan("Prompt> ").size.should eq(1)
+      expect(output_str.scan("Prompt> ").size).to eq(1)
     end
     
     it "stops on Ctrl+D" do
@@ -45,7 +45,7 @@ Spectator.describe Term::Reader do
       
       lines = reader.read_multiline
       
-      lines.should eq(["line1"])
+      expect(lines).to eq(["line1"])
     end
     
     it "stops on Ctrl+Z" do
@@ -55,7 +55,7 @@ Spectator.describe Term::Reader do
       
       lines = reader.read_multiline
       
-      lines.should eq(["line1"])
+      expect(lines).to eq(["line1"])
     end
     
     it "yields each line to block" do
@@ -66,7 +66,7 @@ Spectator.describe Term::Reader do
       yielded_lines = [] of String
       reader.read_multiline { |line| yielded_lines << line }
       
-      yielded_lines.should eq(["line1", "line2"])
+      expect(yielded_lines).to eq(["line1", "line2"])
     end
   end
   
@@ -78,7 +78,7 @@ Spectator.describe Term::Reader do
       
       line = reader.read_line
       
-      line.should eq("hello")
+      expect(line).to eq("hello")
     end
     
     it "handles prompt" do
@@ -88,7 +88,7 @@ Spectator.describe Term::Reader do
       
       line = reader.read_line(prompt: "> ")
       
-      output.to_s.should start_with("> ")
+      expect(output.to_s).to start_with("> ")
     end
     
     it "handles echo disabled" do
@@ -98,8 +98,8 @@ Spectator.describe Term::Reader do
       
       line = reader.read_line(echo: false)
       
-      line.should eq("password")
-      output.to_s.should_not contain("password")
+      expect(line).to eq("password")
+      expect(output.to_s).not_to contain("password")
     end
     
     it "removes trailing newline" do
@@ -109,8 +109,8 @@ Spectator.describe Term::Reader do
       
       line = reader.read_line
       
-      line.should eq("hello")
-      line.should_not end_with("\n")
+      expect(line).to eq("hello")
+      expect(line).not_to end_with("\n")
     end
     
     context "with raw mode" do
@@ -122,7 +122,7 @@ Spectator.describe Term::Reader do
         
         line = reader.read_line(raw: true)
         
-        line.should eq("hello")
+        expect(line).to eq("hello")
       end
     end
   end
@@ -148,7 +148,7 @@ Spectator.describe Term::Reader do
         end
       end
       
-      consecutive_empty.should be_false
+      expect(consecutive_empty).to be_false
     end
   end
 end
