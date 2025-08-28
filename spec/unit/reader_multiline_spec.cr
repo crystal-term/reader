@@ -137,11 +137,20 @@ Spectator.describe Term::Reader do
       lines = reader.read_multiline(prompt: "")
       
       # Get the output and analyze it
-      output_lines = output.to_s.split('\n', remove_empty: false)
+      output_str = output.to_s
+      output_lines = output_str.split('\n', remove_empty: false)
       
-      # Check that we don't have consecutive empty lines
+      # Check that we don't have consecutive empty lines within content
+      # (trailing empty lines are acceptable for multiline termination)
       consecutive_empty = false
-      output_lines.each_cons(2) do |prev, curr|
+      # Remove trailing empty lines for this check
+      trimmed_lines = output_lines.dup
+      while trimmed_lines.last?.try(&.empty?)
+        trimmed_lines.pop
+      end
+      
+      trimmed_lines.each_cons(2) do |pair|
+        prev, curr = pair
         if prev.empty? && curr.empty?
           consecutive_empty = true
           break

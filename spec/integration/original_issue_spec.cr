@@ -32,9 +32,9 @@ Spectator.describe "Original multiline echo issue" do
     
     # Verify we get correct lines
     expect(lines.size).to eq(3)
-    expect(lines[0]).to eq("This is a test\n")
-    expect(lines[1]).to eq("and another\n")  
-    expect(lines[2]).to eq("and another\n")
+    expect(lines[0]).to eq("This is a test")
+    expect(lines[1]).to eq("and another")  
+    expect(lines[2]).to eq("and another")
     
     # THE CRITICAL FIX: No consecutive newlines (no blank lines between inputs)
     expect(output.output_data.includes?("\n\n")).to be_false

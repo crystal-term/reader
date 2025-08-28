@@ -40,19 +40,19 @@ Spectator.describe Term::Reader::KeyEvent do
 
   it "parses lowercase char" do
     event = described_class.from(keys, "a")
-    expect(event.key.name).to eq("alpha")
+    expect(event.key.name).to eq("a")
     expect(event.value).to eq("a")
   end
 
   it "parses uppercase char" do
     event = described_class.from(keys, "A")
-    expect(event.key.name).to eq("alpha")
+    expect(event.key.name).to eq("a") # Normalized to lowercase
     expect(event.value).to eq("A")
   end
 
   it "parses number char" do
     event = described_class.from(keys, "666")
-    expect(event.key.name).to eq("num")
+    expect(event.key.name).to eq("666")
     expect(event.value).to eq("666")
   end
 

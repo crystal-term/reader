@@ -39,7 +39,7 @@ module Term
     KEYS = {
       "\t"      => "tab",
       "\n"      => "enter",
-      "\r"      => "return",
+      "\r"      => "enter",
       "\e"      => "escape",
       " "       => "space",
       "\x7F"    => "backspace",

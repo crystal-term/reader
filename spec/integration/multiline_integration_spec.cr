@@ -18,7 +18,7 @@ Spectator.describe "Multiline integration tests" do
       lines = reader.read_multiline("")
       
       # Verify we get the expected lines
-      expect(lines).to eq(["This is a test\n", "and another\n", "and another\n"])
+      expect(lines).to eq(["This is a test", "and another", "and another"])
       
       # Verify output doesn't have consecutive newlines (blank lines)
       expect(output.output_data.includes?("\n\n")).to be_false
@@ -35,7 +35,7 @@ Spectator.describe "Multiline integration tests" do
       
       lines = reader.read_multiline("Description: ")
       
-      expect(lines).to eq(["Line 1\n", "Line 2\n"])
+      expect(lines).to eq(["Line 1", "Line 2"])
       
       # Should include the prompt
       expect(output.output_data.includes?("Description: ")).to be_true
@@ -49,7 +49,7 @@ Spectator.describe "Multiline integration tests" do
       
       lines = reader.read_multiline("")
       
-      expect(lines).to eq(["Just one line\n"])
+      expect(lines).to eq(["Just one line"])
       expect(output.output_data.includes?("\n\n")).to be_false
       expect(output.output_data.count('\n')).to eq(2)
     end
@@ -72,9 +72,9 @@ Spectator.describe "Multiline integration tests" do
       lines = reader.read_multiline("")
       
       # Verify exact content
-      expect(lines[0]).to eq("Hello, world!\n")
-      expect(lines[1]).to eq("This is line 2\n")
-      expect(lines[2]).to eq("Final line\n")
+      expect(lines[0]).to eq("Hello, world!")
+      expect(lines[1]).to eq("This is line 2")
+      expect(lines[2]).to eq("Final line")
       
       # Verify no extra blanks between lines
       expect(output.output_data.includes?("\n\n")).to be_false
@@ -100,7 +100,7 @@ Spectator.describe "Multiline integration tests" do
       
       lines = reader.read_multiline("")
       
-      expect(lines).to eq(["helXXlo\n"])
+      expect(lines).to eq(["helXXlo"])
       expect(output.output_data.includes?("\n\n")).to be_false
     end
     

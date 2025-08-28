@@ -10,7 +10,7 @@ module Term
       TIMEOUT = 100.milliseconds
 
       getter keys : Hash(String, String)
-      getter escape_codes : Tuple(Array(UInt8), Array(UInt8))
+      getter escape_codes : Array(Array(UInt8))
 
       protected getter input : IO::FileDescriptor
       protected getter mode : Mode
@@ -18,7 +18,7 @@ module Term
       def initialize(@input : IO::FileDescriptor)
         @mode = Mode.new(@input)
         @keys = CONTROL_KEYS.merge(KEYS)
-        @escape_codes = {[ESC.ord.to_u8], CSI.bytes}
+        @escape_codes = [[ESC.ord.to_u8], CSI.bytes, [ESC.ord.to_u8, 79_u8]]
       end
 
       def get_char(raw : Bool, echo : Bool, nonblock : Bool) : Char?

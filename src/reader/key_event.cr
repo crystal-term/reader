@@ -21,11 +21,11 @@ module Term
         shift = false
         case char
         when /^[a-z]{1}$/
-          name = "alpha"
+          name = char # Use the actual letter as the name
         when /^[A-Z]{1}$/
-          name = "alpha"
+          name = char.downcase # Use lowercase version for consistency
         when /^\d+$/
-          name = "num"
+          name = char # Use the actual number as the name
         else
           ctrl = Reader::CONTROL_KEYS.has_key? char
         end
