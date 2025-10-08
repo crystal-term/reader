@@ -1,5 +1,5 @@
 name: term-reader
-version: 0.3.1
+version: 0.3.2
 
 authors:
   - Chris Watson <cawatson1993@gmail.com>
@@ -9,10 +9,10 @@ description: Terminal input reading with line editing
 dependencies:
   term-cursor:
     github: crystal-term/cursor
-    branch: master
+    version: ~> 0.3.1
   term-screen:
     github: crystal-term/screen
-    branch: master
+    version: ~> 0.3.1
 
 development_dependencies:
   spectator:
