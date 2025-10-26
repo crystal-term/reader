@@ -87,7 +87,7 @@ module Term
     # Get input in unbuffered mode.
     def unbuffered(& : ->)
       buffering = begin
-        @output.as(IO::FileDescriptor).sync?
+        (@output.as(IO::FileDescriptor).sync? || false)
       rescue
         false
       end
@@ -99,7 +99,7 @@ module Term
       yield
     ensure
       begin
-        @output.as(IO::FileDescriptor).sync = buffering
+        @output.as(IO::FileDescriptor).sync = (buffering || false)
       rescue
       end
     end
