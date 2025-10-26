@@ -160,6 +160,7 @@ module TestHelpers
     property output_data : String = ""
     property read_pos : Int32 = 0
     property? blocking_mode : Bool = true
+    property sync_value : Bool? = true
     
     def initialize(fd : Int32 = 0)
       super(handle: fd.unsafe_as(LibC::Int), close_on_finalize: false)
@@ -254,12 +255,12 @@ module TestHelpers
       # No-op for testing
     end
     
-    def sync? : Bool
-      true
+    def sync? : Bool?
+      @sync_value
     end
     
     def sync=(value : Bool)
-      # No-op for testing
+      @sync_value = value
     end
     
     def noecho(&block)

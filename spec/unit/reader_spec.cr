@@ -331,6 +331,21 @@ Spectator.describe Term::Reader do
       
       expect(output.sync?).to eq(original_sync)
     end
+    
+    it "handles sync? returning nil without type errors" do
+      mock_output = MockFileDescriptor.new(1)
+      mock_output.sync_value = nil
+      r = described_class.new(input: input, output: mock_output)
+      
+      executed = false
+      expect do
+        r.unbuffered do
+          executed = true
+        end
+      end.not_to raise_error
+      
+      expect(executed).to be_true
+    end
   end
   
   describe "#inspect" do
