@@ -17,6 +17,7 @@ dependencies:
 development_dependencies:
   spectator:
     gitlab: arctic-fox/spectator
+    version: ~> 0.12.2
 
 crystal: ">= 1.0.0"
 
