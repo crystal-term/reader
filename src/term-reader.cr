@@ -99,7 +99,7 @@ module Term
       yield
     ensure
       begin
-        @output.as(IO::FileDescriptor).sync = buffering
+        @output.as(IO::FileDescriptor).sync = !!buffering
       rescue
       end
     end
@@ -124,12 +124,12 @@ module Term
       if !@input.is_a?(IO::FileDescriptor)
         char = @input.read_char
         return nil if char.nil?
-        
+
         # Handle echo for mock inputs
         if echo && char
           @output.print(char)
         end
-        
+
         if console.keys[char.to_s]? == "ctrl_c"
           trigger_key_event(char.to_s)
           handle_interrupt(interrupt)
@@ -138,12 +138,12 @@ module Term
       end
 
       char = console.get_char(raw, echo, nonblock)
-      
+
       # Handle echo for mock objects (real terminals echo automatically)
       if echo && char && (@input.class.name.includes?("Mock") || @input.class.name.includes?("KeyboardSimulator"))
         @output.print(char)
       end
-      
+
       if console.keys[char.to_s]? == "ctrl_c"
         trigger_key_event(char.to_s)
         handle_interrupt(interrupt)
@@ -207,28 +207,28 @@ module Term
               line.left
               line.delete
             end
-        when "delete", DELETE == code
-          line.delete
-        when /ctrl_/
-          # skip
-        when "up"
-          line.replace(history_previous.to_s) if history_previous?
-        when "down"
-          line.replace(history_next? ? history_next.to_s : "")
-        when "left"
-          line.left
-        when "right"
-          line.right
-        when "home"
-          line.move_to_start
-        when "end"
-          line.move_to_end
-        else
-          if raw && code == CARRIAGE_RETURN
-            char = "\n"
+          when "delete", DELETE == code
+            line.delete
+          when /ctrl_/
+            # skip
+          when "up"
+            line.replace(history_previous.to_s) if history_previous?
+          when "down"
+            line.replace(history_next? ? history_next.to_s : "")
+          when "left"
+            line.left
+          when "right"
+            line.right
+          when "home"
+            line.move_to_start
+          when "end"
             line.move_to_end
-          end
-          line.insert(char)
+          else
+            if raw && code == CARRIAGE_RETURN
+              char = "\n"
+              line.move_to_end
+            end
+            line.insert(char)
           end
         end
 
@@ -252,7 +252,7 @@ module Term
               # Cursor at end - character was just appended, no need to redraw full line
               # The character was already echoed in get_codes for mock inputs
             else
-              # Cursor not at end - need full redraw for cursor positioning  
+              # Cursor not at end - need full redraw for cursor positioning
               output.print(line.text)
               unless line.end?
                 output.print(cursor.backward(line.text_size - line.cursor))
@@ -267,7 +267,7 @@ module Term
           # For multiline with echo, cursor needs to move to next line
           # But don't add extra newline if we already echoed a newline character
           if echo
-            # Only add newline if the original character wasn't a newline 
+            # Only add newline if the original character wasn't a newline
             # (i.e., it was a carriage return that got converted)
             if code == CARRIAGE_RETURN
               output.print("\n")
@@ -329,18 +329,18 @@ module Term
       until @stop
         line = read_line(prompt: current_prompt)
         break if !line
-        
+
         # Check if line is truly empty (no characters at all)
         if line.empty?
           break
         end
-        
+
         # Skip whitespace-only lines (but not empty lines)
         if line !~ /\S/
           current_prompt = "" # Still clear prompt for next line
           next
         end
-        
+
         lines << line
         yield line
         current_prompt = "" # Only show prompt for first line
