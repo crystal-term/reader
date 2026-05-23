@@ -99,7 +99,7 @@ module Term
       yield
     ensure
       begin
-        @output.as(IO::FileDescriptor).sync = !!buffering
+        @output.as(IO::FileDescriptor).sync = buffering || false
       rescue
       end
     end
