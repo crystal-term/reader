@@ -1,5 +1,34 @@
 require "../spec_helper"
 
+class ModeTrackingFileDescriptor < TestHelpers::MockFileDescriptor
+  getter raw_calls : Int32 = 0
+  getter cooked_calls : Int32 = 0
+  getter noecho_calls : Int32 = 0
+
+  def initialize(@is_tty : Bool = true)
+    super(0)
+  end
+
+  def tty? : Bool
+    @is_tty
+  end
+
+  def noecho(&block)
+    @noecho_calls += 1
+    yield
+  end
+
+  def raw(&block)
+    @raw_calls += 1
+    yield
+  end
+
+  def cooked(&block)
+    @cooked_calls += 1
+    yield
+  end
+end
+
 Spectator.describe Term::Reader::Mode do
   include TestHelpers
 
@@ -50,6 +79,15 @@ Spectator.describe Term::Reader::Mode do
 
       expect(result).to eq("raw mode active")
     end
+
+    it "enters raw mode when enabled on a TTY" do
+      input = ModeTrackingFileDescriptor.new
+      mode = described_class.new(input)
+
+      mode.raw(true) { "raw mode active" }
+
+      expect(input.raw_calls).to eq(1)
+    end
   end
 
   describe "#cooked" do
@@ -76,6 +114,15 @@ Spectator.describe Term::Reader::Mode do
       end
 
       expect(result).to eq("cooked mode active")
+    end
+
+    it "enters cooked mode when enabled on a TTY" do
+      input = ModeTrackingFileDescriptor.new
+      mode = described_class.new(input)
+
+      mode.cooked(true) { "cooked mode active" }
+
+      expect(input.cooked_calls).to eq(1)
     end
   end
 
@@ -128,6 +175,23 @@ Spectator.describe Term::Reader::Mode do
       end
 
       expect(result).to eq("echo mode active")
+    end
+  end
+
+  describe "non-TTY input" do
+    it "yields without changing raw, cooked, or echo modes" do
+      input = ModeTrackingFileDescriptor.new(is_tty: false)
+      mode = described_class.new(input)
+      yielded = [] of String
+
+      mode.raw(true) { yielded << "raw" }
+      mode.cooked(true) { yielded << "cooked" }
+      mode.echo(false) { yielded << "echo" }
+
+      expect(yielded).to eq(["raw", "cooked", "echo"])
+      expect(input.raw_calls).to eq(0)
+      expect(input.cooked_calls).to eq(0)
+      expect(input.noecho_calls).to eq(0)
     end
   end
 

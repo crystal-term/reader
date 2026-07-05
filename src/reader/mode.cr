@@ -15,19 +15,19 @@ module Term
 
       # Use raw mode in the given block
       def raw(is_on : Bool = true, & : ->)
-        if is_on || !@input.tty?
-          yield
-        else
+        if is_on && @input.tty?
           @input.raw { yield }
+        else
+          yield
         end
       end
 
       # Enable character processing for the given block
       def cooked(is_on : Bool = true, & : ->)
-        if is_on || !@input.tty?
-          yield
-        else
+        if is_on && @input.tty?
           @input.cooked { yield }
+        else
+          yield
         end
       end
     end
