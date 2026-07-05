@@ -164,6 +164,13 @@ Spectator.describe Term::Reader do
         # Output should only have prompt and newline, not the input
         expect(output.output_data.includes?("secret")).to be_false
       end
+
+      it "does not print backspace erase sequences" do
+        input.inject_input("ab\x7F\r")
+        line = reader.read_line(echo: false)
+        expect(line).to eq("a")
+        expect(output.output_data).to eq("\n")
+      end
     end
 
     context "with history" do

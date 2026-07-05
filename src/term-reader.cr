@@ -214,7 +214,7 @@ module Term
               line.left
               line.delete
             end
-          when "delete", DELETE == code
+          when "delete"
             line.delete
           when /ctrl_/
             # skip
@@ -239,7 +239,7 @@ module Term
           end
         end
 
-        if console.keys[char]? == "backspace" || BACKSPACE == code && echo
+        if (console.keys[char]? == "backspace" || BACKSPACE == code) && echo
           if raw
             output.print("\e[1X") unless line.start?
           else
