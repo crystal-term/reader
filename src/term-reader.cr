@@ -271,6 +271,8 @@ module Term
         end
 
         if {CARRIAGE_RETURN, NEWLINE}.includes?(code)
+          add_to_history(line.text.strip) if track_history?
+
           # For multiline with echo, cursor needs to move to next line
           # But don't add extra newline if we already echoed a newline character
           if echo
@@ -284,10 +286,6 @@ module Term
             output.puts
           end
           break
-        end
-
-        if track_history? && echo
-          add_to_history(line.text.strip)
         end
       end
 

@@ -184,7 +184,15 @@ Spectator.describe Term::Reader do
         input.inject_input("tracked\r")
         r.read_line
 
-        expect(r.history.to_a.includes?("tracked")).to be_true
+        expect(r.history.to_a).to eq(["tracked"])
+      end
+
+      it "tracks history when echo is disabled" do
+        r = described_class.new(input: input, output: output, track_history: true)
+        input.inject_input("secret\r")
+        r.read_line(echo: false)
+
+        expect(r.history.to_a).to eq(["secret"])
       end
 
       it "does not track history when disabled" do
