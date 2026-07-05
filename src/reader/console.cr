@@ -7,7 +7,7 @@ module Term
       ESC = '\e'
       CSI = "\e["
 
-      TIMEOUT = 100.milliseconds
+      TIMEOUT = 50.milliseconds
 
       getter keys : Hash(String, String)
       getter escape_codes : Array(Array(UInt8))
@@ -24,17 +24,18 @@ module Term
       def get_char(raw : Bool, echo : Bool, nonblock : Bool) : Char?
         char = nil
         previous_blocking = @input.blocking
+        next_blocking = !nonblock
         begin
           mode.cooked(!raw) do
             mode.raw(raw) do
               mode.echo(echo) do
-                @input.blocking = !nonblock
+                @input.blocking = next_blocking unless previous_blocking == next_blocking
                 char = @input.read_char
               end
             end
           end
         ensure
-          @input.blocking = previous_blocking
+          @input.blocking = previous_blocking unless @input.blocking == previous_blocking
         end
 
         char

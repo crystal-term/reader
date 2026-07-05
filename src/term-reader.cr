@@ -18,7 +18,8 @@ module Term
     CARRIAGE_RETURN = 13
     NEWLINE         = 10
     BACKSPACE       =  8
-    DELETE          = 27
+    ESC_CODE        = 27
+    DELETE          = ESC_CODE
 
     getter input : IO
     getter output : IO
@@ -125,7 +126,6 @@ module Term
     end
 
     # Get input code points
-    # FIXME: Fails to handle escape '\e' all by itself
     def get_codes(echo : Bool, raw : Bool, nonblock : Bool, interrupt : Symbol | Proc = @interrupt) : Array(Int32)?
       # For non-FileDescriptor input (like IO::Memory for testing), read directly
       if !@input.is_a?(IO::FileDescriptor)
@@ -144,6 +144,26 @@ module Term
         return [char.ord] of Int32
       end
 
+      code = get_file_descriptor_code(echo, raw, nonblock, interrupt)
+      return nil if code.nil?
+
+      codes = [code] of Int32
+      condition = ->(escape : Array(UInt8)) do
+        (codes - escape).empty? ||
+        (escape - codes).empty? &&
+        !(64..126).covers?(codes.last)
+      end
+
+      while console.escape_codes.any? { |escape| condition.call(escape) }
+        code = get_escape_continuation_code(echo, raw, interrupt)
+        break if code.nil?
+        codes << code
+      end
+
+      codes
+    end
+
+    private def get_file_descriptor_code(echo : Bool, raw : Bool, nonblock : Bool, interrupt : Symbol | Proc) : Int32?
       char = console.get_char(raw, echo, nonblock)
 
       # Handle echo for mock objects (real terminals echo automatically)
@@ -157,20 +177,20 @@ module Term
       end
       return nil if char.nil?
 
-      codes = [char.ord] of Int32
-      condition = ->(escape : Array(UInt8)) do
-        (codes - escape).empty? ||
-        (escape - codes).empty? &&
-        !(64..126).covers?(codes.last)
-      end
+      char.ord
+    end
 
-      while console.escape_codes.any? { |escape| condition.call(escape) }
-        char_codes = get_codes(echo, raw, true)
-        break if char_codes.nil?
-        codes.concat char_codes
-      end
+    private def get_escape_continuation_code(echo : Bool, raw : Bool, interrupt : Symbol | Proc) : Int32?
+      input = @input.as?(IO::FileDescriptor)
+      return get_file_descriptor_code(echo, raw, true, interrupt) unless input
 
-      codes
+      previous_timeout = input.read_timeout
+      input.read_timeout = Console::TIMEOUT
+      get_file_descriptor_code(echo, raw, true, interrupt)
+    rescue IO::TimeoutError
+      nil
+    ensure
+      input.read_timeout = previous_timeout if input
     end
 
     # Get a signal line from STDIN. Each key pressed is echoed
