@@ -1,8 +1,6 @@
 module Term
   class Reader
     class Line
-      ANSI_MATCHER = /(\[)?\033(\[)?[;?\d]*[\dA-Za-z](\])?/
-
       enum Mode
         Edit
         Replace
@@ -10,7 +8,7 @@ module Term
 
       # Strip ANSI characters from the text
       def self.sanitize(text : String) : String
-        text.gsub(ANSI_MATCHER, "")
+        Term::Cursor.strip_ansi(text)
       end
 
       # The editable text

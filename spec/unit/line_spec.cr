@@ -1,6 +1,16 @@
 require "../spec_helper"
 
 Spectator.describe Term::Reader::Line do
+  describe ".sanitize" do
+    it "strips ANSI sequences through the shared cursor helper" do
+      expect(described_class.sanitize("\e[31mred\e[0m")).to eq("red")
+    end
+
+    it "keeps literal brackets" do
+      expect(described_class.sanitize("[not-an-escape]")).to eq("[not-an-escape]")
+    end
+  end
+
   it "provides access to the prompt" do
     line = described_class.new("aaa", prompt: ">> ")
     expect(line.prompt).to eq(">> ")
