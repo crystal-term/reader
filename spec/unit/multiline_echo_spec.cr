@@ -3,16 +3,6 @@ require "../spec_helper"
 Spectator.describe "Term::Reader multiline echo behavior" do
   include TestHelpers
 
-  # Ensure clean state between tests - multiple cleanup strategies
-  before_each do
-    Term::Reader.global_handlers.clear
-  end
-
-  # Also clear before the entire test suite runs
-  before_all do
-    Term::Reader.global_handlers.clear
-  end
-
   # Custom output tracker to analyze exact output
   class OutputTracker < IO::FileDescriptor
     property output_calls : Array({String, String}) = [] of {String, String}
@@ -195,8 +185,6 @@ Spectator.describe "Term::Reader multiline echo behavior" do
 
   describe "multiline line ending behavior" do
     it "correctly handles CRLF line endings" do
-      # Force clean state
-      Term::Reader.global_handlers.clear
       output.clear
 
       input.inject_input("Line with CRLF\r\n\r\n")
@@ -245,8 +233,6 @@ Spectator.describe "Term::Reader multiline echo behavior" do
       # This test specifically targets the reported issue:
       # "Pressing enter ends up duplicating the line"
 
-      # Force clean state - clear everything
-      Term::Reader.global_handlers.clear
       output.clear
 
       input.inject_input("This is a test\r")
