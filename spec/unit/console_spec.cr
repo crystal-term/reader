@@ -75,6 +75,16 @@ Spectator.describe Term::Reader::Console do
         char = console.get_char(echo: false, raw: true, nonblock: true)
         expect(char).to eq('z')
       end
+
+      it "restores the previous blocking mode" do
+        mock_input.blocking = true
+        mock_input.inject_input("z")
+
+        char = console.get_char(echo: false, raw: true, nonblock: true)
+
+        expect(char).to eq('z')
+        expect(mock_input.blocking).to be_true
+      end
     end
   end
 

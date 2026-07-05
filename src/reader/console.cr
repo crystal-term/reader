@@ -23,17 +23,22 @@ module Term
 
       def get_char(raw : Bool, echo : Bool, nonblock : Bool) : Char?
         char = nil
-        mode.cooked(!raw) do
-          mode.raw(raw) do
-            mode.echo(echo) do
-              @input.blocking = !nonblock
-              char = @input.read_char
+        previous_blocking = @input.blocking
+        begin
+          mode.cooked(!raw) do
+            mode.raw(raw) do
+              mode.echo(echo) do
+                @input.blocking = !nonblock
+                char = @input.read_char
+              end
             end
           end
+        ensure
+          @input.blocking = previous_blocking
         end
 
         char
-      rescue
+      rescue IO::Error
         nil
       end
     end
