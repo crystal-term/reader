@@ -436,6 +436,8 @@ module Term
         {% elsif valid_keys.includes?(key.id.stringify) %}
           %kp{key.id} = Term::Reader::HandlerFunc.new { |k, e| self.key{{ key.id }}; nil }
           Term::Reader.global_handlers[{{ key.id.stringify }}] << %kp{key.id}
+        {% else %}
+          {% raise "Term::Reader.subscribe: unknown key #{key} — valid keys are :keypress plus the values of CONTROL_KEYS/KEYS" %}
         {% end %}
       {% end %}
     end
