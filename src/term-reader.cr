@@ -31,12 +31,11 @@ module Term
     getter history : History
     getter interrupt : Symbol
 
+    # Reader-lifetime handlers registered through `on_key`; never cleared by prompts.
     @event_handlers : Hash(String, Array(HandlerFunc))
 
-    # :nodoc:
-    class_property global_handlers : Hash(String, Array(HandlerFunc)) = Hash(String, Array(HandlerFunc)).new { |h, k|
-      h[k] = [] of HandlerFunc
-    }
+    # Current prompt component handlers registered through `subscribe`; cleared before each component renders.
+    getter component_handlers : Hash(String, Array(HandlerFunc))
 
     def initialize(@input : IO = STDIN,
                    @output : IO = STDOUT,
@@ -55,6 +54,9 @@ module Term
       @event_handlers = Hash(String, Array(HandlerFunc)).new do |h, k|
         h[k] = [] of HandlerFunc
       end
+      @component_handlers = Hash(String, Array(HandlerFunc)).new do |h, k|
+        h[k] = [] of HandlerFunc
+      end
 
       @history = History.new do |h|
         h.cycle = @history_cycle
@@ -65,7 +67,8 @@ module Term
       @stop = false
       @cursor = Term::Cursor
 
-      Term::Reader.subscribe(:ctrl_d, :ctrl_z)
+      on_key(:ctrl_d) { |_k, _e| keyctrl_d }
+      on_key(:ctrl_z) { |_k, _e| keyctrl_z }
     end
 
     # Listen for specific keys (or all keys if `keys` is empty)
@@ -82,6 +85,10 @@ module Term
           @event_handlers[key.to_s] << block
         end
       end
+    end
+
+    def clear_component_handlers : Nil
+      @component_handlers.clear
     end
 
     # Get input in unbuffered mode.
@@ -404,8 +411,8 @@ module Term
 
       (@event_handlers[key] +
         @event_handlers[""] +
-        self.class.global_handlers[key] +
-        self.class.global_handlers[""]).each do |proc|
+        @component_handlers[key] +
+        @component_handlers[""]).each do |proc|
         proc.call(event.key.name, event)
       end
     end
@@ -427,15 +434,15 @@ module Term
       end
     end
 
-    macro subscribe(*keys)
+    macro subscribe(reader, *keys)
       {% valid_keys = (Term::Reader::CONTROL_KEYS.values + Term::Reader::KEYS.values).uniq %}
       {% for key in keys %}
         {% if key.id.symbolize == :keypress %}
           %kp = Term::Reader::HandlerFunc.new { |k, e| self.keypress(k, e); nil }
-          Term::Reader.global_handlers[""] << %kp
+          {{ reader }}.component_handlers[""] << %kp
         {% elsif valid_keys.includes?(key.id.stringify) %}
           %kp{key.id} = Term::Reader::HandlerFunc.new { |k, e| self.key{{ key.id }}; nil }
-          Term::Reader.global_handlers[{{ key.id.stringify }}] << %kp{key.id}
+          {{ reader }}.component_handlers[{{ key.id.stringify }}] << %kp{key.id}
         {% else %}
           {% raise "Term::Reader.subscribe: unknown key #{key} — valid keys are :keypress plus the values of CONTROL_KEYS/KEYS" %}
         {% end %}

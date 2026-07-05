@@ -77,12 +77,12 @@ Spectator.describe "Term::Reader event subscription" do
   end
 
   # TODO: Fix this test - macro expansion issue with Spectator
-  # describe "global event handlers (subscribe macro)" do
+  # describe "component event handlers (subscribe macro)" do
   #   # Create a test class that uses the subscribe macro
   #   class TestSubscriber
   #     getter events : Array({String, Term::Reader::KeyEvent}) = [] of {String, Term::Reader::KeyEvent}
   #
-  #     Term::Reader.subscribe(:ctrl_a, :ctrl_b)
+  #     Term::Reader.subscribe(reader, :ctrl_a, :ctrl_b)
   #
   #     def keyctrl_a
   #       @events << {"ctrl_a", Term::Reader::KeyEvent.new(Term::Reader::Key.new("ctrl_a"), "ctrl_a")}
