@@ -44,7 +44,8 @@ module Term
                    @track_history : Bool = true,
                    @history_cycle : Bool = false,
                    @history_exclude : String -> Bool = ->(s : String) { s.strip.empty? },
-                   @history_duplicates : Bool = false)
+                   @history_duplicates : Bool = false,
+                   @echo_simulation : Bool? = nil)
       @console = if @input.is_a?(IO::FileDescriptor)
                    Console.new(@input.as(IO::FileDescriptor))
                  else
@@ -132,8 +133,7 @@ module Term
         char = @input.read_char
         return nil if char.nil?
 
-        # Handle echo for mock inputs
-        if echo && char
+        if echo && char && simulate_echo?
           @output.print(char)
         end
 
@@ -146,8 +146,7 @@ module Term
 
       char = console.get_char(raw, echo, nonblock)
 
-      # Handle echo for mock objects (real terminals echo automatically)
-      if echo && char && (@input.class.name.includes?("Mock") || @input.class.name.includes?("KeyboardSimulator"))
+      if echo && char && simulate_echo?
         @output.print(char)
       end
 
@@ -196,9 +195,7 @@ module Term
           break
         end
 
-        # Only clear display for real terminals, not for tests
-        # Tests don't handle ANSI sequences correctly and cause duplication
-        if raw && echo && @output.is_a?(IO::FileDescriptor) && @output.as(IO::FileDescriptor).tty? && !@output.class.name.includes?("Mock") && !@output.class.name.includes?("Detector") && !@output.class.name.includes?("OutputTracker")
+        if raw && echo && output_tty?
           clear_display(line, screen_width)
         end
 
@@ -253,17 +250,9 @@ module Term
         if raw && echo
           # Don't redraw the line when Enter is pressed to avoid duplication
           unless char == "\n"
-            # For test scenarios, avoid full line redraw to prevent duplication
-            # Only redraw full line if cursor is not at end (cursor movement case)
-            if line.end?
-              # Cursor at end - character was just appended, no need to redraw full line
-              # The character was already echoed in get_codes for mock inputs
-            else
-              # Cursor not at end - need full redraw for cursor positioning
+            if output_tty? && !line.end?
               output.print(line.text)
-              unless line.end?
-                output.print(cursor.backward(line.text_size - line.cursor))
-              end
+              output.print(cursor.backward(line.text_size - line.cursor))
             end
           else
             line.move_to_start
@@ -290,6 +279,19 @@ module Term
       end
 
       line.text.rstrip('\n').rstrip('\r')
+    end
+
+    private def simulate_echo? : Bool
+      # Non-tty inputs need reader-side echo simulation; terminals echo via termios.
+      @echo_simulation.nil? ? !input_tty? : @echo_simulation.not_nil!
+    end
+
+    private def input_tty? : Bool
+      @input.responds_to?(:tty?) && @input.tty?
+    end
+
+    private def output_tty? : Bool
+      @output.responds_to?(:tty?) && @output.tty?
     end
 
     # Clear display for the current line input

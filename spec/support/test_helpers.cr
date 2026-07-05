@@ -66,7 +66,7 @@ module TestHelpers
     end
 
     def tty?
-      true
+      false
     end
 
     # Add more characters to the input buffer
@@ -230,7 +230,7 @@ module TestHelpers
     end
 
     def tty? : Bool
-      true
+      false
     end
 
     def cooked : Nil

@@ -1,7 +1,14 @@
 require "../spec_helper"
+require "io/memory"
 
 Spectator.describe Term::Reader do
   include TestHelpers
+
+  class TtyFileDescriptor < MockFileDescriptor
+    def tty? : Bool
+      true
+    end
+  end
 
   let(input) { MockFileDescriptor.new(0) }
   let(output) { MockFileDescriptor.new(1) }
@@ -66,6 +73,29 @@ Spectator.describe Term::Reader do
       input.inject_input("y")
       reader.read_keypress(echo: true)
       expect(output.output_data).to eq("y")
+    end
+
+    it "simulates echo automatically for memory input" do
+      input = IO::Memory.new("m")
+      output = IO::Memory.new
+      reader = described_class.new(input: input, output: output)
+
+      char = reader.read_keypress(echo: true)
+
+      expect(char).to eq("m")
+      expect(output.to_s).to eq("m")
+    end
+
+    it "does not simulate echo when disabled for tty input" do
+      input = TtyFileDescriptor.new(0)
+      output = MockFileDescriptor.new(1)
+      reader = described_class.new(input: input, output: output, echo_simulation: false)
+
+      input.inject_input("t")
+      char = reader.read_keypress(echo: true)
+
+      expect(char).to eq("t")
+      expect(output.output_data).to be_empty
     end
 
     it "returns nil in nonblocking mode with no input" do
@@ -142,6 +172,28 @@ Spectator.describe Term::Reader do
       input.inject_input("\r")
       line = reader.read_line
       expect(line).to eq("tes")
+    end
+
+    it "clears display for tty output only" do
+      tty_input = TtyFileDescriptor.new(0)
+      tty_output = TtyFileDescriptor.new(1)
+      tty_reader = described_class.new(input: tty_input, output: tty_output, echo_simulation: false)
+      tty_input.inject_input("a\r")
+
+      line = tty_reader.read_line
+
+      expect(line).to eq("a")
+      expect(tty_output.output_data).to contain("\e[")
+
+      non_tty_input = MockFileDescriptor.new(0)
+      non_tty_output = MockFileDescriptor.new(1)
+      non_tty_reader = described_class.new(input: non_tty_input, output: non_tty_output)
+      non_tty_input.inject_input("a\r")
+
+      line = non_tty_reader.read_line
+
+      expect(line).to eq("a")
+      expect(non_tty_output.output_data).not_to contain("\e[")
     end
 
     it "handles ctrl+d to exit" do
