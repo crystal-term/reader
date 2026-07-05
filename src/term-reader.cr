@@ -380,9 +380,8 @@ module Term
     end
 
     def history_previous : String?
-      line = @history.get
       @history.previous
-      line
+      @history.get
     end
 
     # Inspect class name and public attributes

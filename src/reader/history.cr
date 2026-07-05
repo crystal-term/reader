@@ -44,7 +44,7 @@ module Term
 
         @history.shift if size >= max_size
         @history << line
-        @index = @history.size - 1
+        @index = @history.size
 
         line
       end
@@ -55,7 +55,7 @@ module Term
 
       def next : Nil
         return if size.zero?
-        if @index == size - 1
+        if @index >= size - 1
           @index = 0 if @cycle
         else
           @index += 1
@@ -63,7 +63,7 @@ module Term
       end
 
       def next? : Bool
-        size > 0 && !(@index == size - 1 && !@cycle)
+        size > 0 && (@index < size - 1 || @cycle)
       end
 
       def succ : Nil
@@ -80,7 +80,7 @@ module Term
       end
 
       def previous? : Bool
-        size > 0 && !(@index < 0 && !cycle)
+        size > 0 && (@index > 0 || @cycle)
       end
 
       def pred : Nil
@@ -95,7 +95,7 @@ module Term
       end
 
       def get : String?
-        return if size.zero?
+        return if size.zero? || @index >= size
         self[@index]
       end
 

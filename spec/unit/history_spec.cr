@@ -37,7 +37,7 @@ Spectator.describe Term::Reader::History do
     history << "line #4"
 
     expect(history.to_a).to eq(["line #2", "line #3", "line #4"])
-    expect(history.index).to eq(2)
+    expect(history.index).to eq(3)
   end
 
   it "excludes items" do
@@ -48,6 +48,69 @@ Spectator.describe Term::Reader::History do
     history << "line #3"
 
     expect(history.to_a).to eq(["line #1"])
-    expect(history.index).to eq(0)
+    expect(history.index).to eq(1)
+  end
+
+  it "walks backward and forward through history without cycling" do
+    history = described_class.new
+    history << "a"
+    history << "b"
+    history << "c"
+
+    expect(history.index).to eq(3)
+    expect(history.get).to be_nil
+
+    expect(history.previous?).to be_true
+    history.previous
+    expect(history.get).to eq("c")
+
+    expect(history.previous?).to be_true
+    history.previous
+    expect(history.get).to eq("b")
+
+    expect(history.previous?).to be_true
+    history.previous
+    expect(history.get).to eq("a")
+
+    expect(history.previous?).to be_false
+    history.previous
+    expect(history.get).to eq("a")
+
+    expect(history.next?).to be_true
+    history.next
+    expect(history.get).to eq("b")
+
+    expect(history.next?).to be_true
+    history.next
+    expect(history.get).to eq("c")
+
+    expect(history.next?).to be_false
+    history.next
+    expect(history.get).to eq("c")
+  end
+
+  it "cycles through history when cycling is enabled" do
+    history = described_class.new(cycle: true)
+    history << "a"
+    history << "b"
+    history << "c"
+
+    history.previous
+    expect(history.get).to eq("c")
+
+    history.previous
+    expect(history.get).to eq("b")
+
+    history.previous
+    expect(history.get).to eq("a")
+
+    history.previous
+    expect(history.get).to eq("c")
+
+    history.next
+    expect(history.get).to eq("a")
+
+    history.next
+    expect(history.get).to eq("b")
   end
 end
